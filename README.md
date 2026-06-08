@@ -24,3 +24,5 @@ There is no server, no login, and no fake automatic iCloud sync.
 ## GitHub Pages
 
 This repository includes a static `index.html`, `.nojekyll`, and a GitHub Actions Pages workflow. If the live URL does not work yet, open repository Settings, then Pages, and set the source to GitHub Actions.
+
+Deployment trigger: 2026-06-09.
