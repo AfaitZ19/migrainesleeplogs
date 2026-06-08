@@ -74,10 +74,11 @@
     .ico { font-size: 30px; line-height: 1; }
 
     .medgroup { margin-bottom: 16px; }
-    .medtitle { font-size: 15px; color: var(--yellow); font-weight: 900; margin: 0 0 8px; }
+    .medtitle { font-size: 18px; color: var(--yellow); font-weight: 950; margin: 0 0 8px; }
+    .medgroup.current { background: rgba(247,200,79,.06); border: 1px solid rgba(247,200,79,.22); border-radius: var(--r); padding: 10px; }
     .medgrid { display: grid; gap: 9px; }
     .medbtn {
-      min-height: 70px;
+      min-height: 74px;
       border: 1px solid var(--line);
       border-radius: var(--r);
       color: var(--text);
@@ -88,6 +89,8 @@
     }
     .medbtn b { display: block; font-size: 17px; line-height: 1.15; }
     .medbtn span { color: var(--muted); font-size: 12px; display: block; margin-top: 4px; }
+    .medbtn .dose { color: var(--text); font-size: 14px; }
+    .medbtn .last { color: var(--green); font-size: 13px; font-weight: 800; }
     .medbtn.taken { border-color: rgba(97,211,148,.42); background: rgba(97,211,148,.12); }
     .medbtn.missed { border-color: rgba(255,116,116,.44); background: rgba(255,116,116,.12); }
 
@@ -185,8 +188,8 @@
 
         <div class="quick">
           <button class="bigbtn yellow wide" data-screen="meds"><span class="ico">💊</span><strong>กินยาแล้ว</strong><small>แตะชื่อยา = บันทึกทันที</small></button>
-          <button class="bigbtn violet" data-open="prodrome"><span class="ico">⚡</span><strong>เริ่มรู้สึกแปลก</strong><small>prodrome</small></button>
-          <button class="bigbtn pink" data-open="attack"><span class="ico">💥</span><strong>เริ่มปวดหัว</strong><small>large buttons only</small></button>
+          <button class="bigbtn violet" data-open="prodrome"><span class="ico">⚡</span><strong>เริ่มแปลก</strong><small>บันทึกอาการนำ</small></button>
+          <button class="bigbtn pink" data-open="attack"><span class="ico">💥</span><strong>เริ่มปวดหัว</strong><small>เลือกไม่กี่อย่าง</small></button>
           <button class="bigbtn green" id="improveQuick"><span class="ico">😌</span><strong>ดีขึ้นแล้ว</strong><small>แตะเมื่ออาการลง</small></button>
           <button class="bigbtn blue" data-open="sleep"><span class="ico">🌅</span><strong>ตื่นมาปวดหัวไหม</strong><small>sleep log</small></button>
         </div>
@@ -199,7 +202,7 @@
         <div class="top">
           <div>
             <h1>💊 กินยาแล้ว</h1>
-            <div class="sub">One tap. บันทึกเวลาอัตโนมัติ.</div>
+            <div class="sub">แตะชื่อยา = บันทึกเวลาอัตโนมัติ</div>
           </div>
         </div>
         <div id="medSummary"></div>
@@ -683,25 +686,33 @@
     }
 
     function medPlanCount() { return MED_SCHEDULE.reduce((sum, g) => sum + g.meds.filter(m => medDueToday(medId(m))).length, 0); }
+    function currentMedGroupName() {
+      const h = new Date().getHours();
+      if (h < 11) return "เช้า (หลังอาหารเช้า)";
+      if (h < 16) return "กลางวัน (หลังอาหารกลางวัน)";
+      if (h < 21) return "เย็น (หลังอาหารเย็น)";
+      return "ก่อนนอน";
+    }
     function renderMeds() {
       const takenCount = new Set(todayMedLogs().filter(l => medDueToday(l.medId)).map(l => l.medId)).size;
       const total = medPlanCount();
       const missed = [];
       for (const group of MED_SCHEDULE) for (const med of group.meds) if (medDueToday(medId(med)) && medStatus(medId(med), group) === "missed") missed.push(medLabel(med));
       const nurtecLast = latestMedLog("nurtec75");
+      const currentGroup = currentMedGroupName();
       document.getElementById("adherenceMini").innerHTML = `${takenCount}/${total}<br>ยา`;
       document.getElementById("medSummary").innerHTML = `
         <div class="band ${missed.length ? "danger" : "ok"}">
-          <div class="row between"><strong>วันนี้กินแล้ว ${takenCount}/${total}</strong><span>${Math.round(takenCount / total * 100)}%</span></div>
-          ${missed.length ? `<div class="mini" style="margin-top:8px">ยังไม่เห็นบันทึก: ${missed.map(esc).join(", ")}</div>` : `<div class="mini" style="margin-top:8px">ยังไม่มีรายการที่เลยเวลา</div>`}
+          <div class="row between"><strong>วันนี้กินแล้ว ${takenCount}/${total}</strong><span>${Math.round(takenCount / total * 100)} %</span></div>
+          ${missed.length ? `<div class="mini" style="margin-top:8px">ยังไม่ได้กิน ${missed.length} รายการ</div>` : `<div class="mini" style="margin-top:8px">ไม่มีรายการเลยเวลา</div>`}
         </div>
         <div class="band">
-          <div class="row between"><strong>Nurtec วันเว้นวัน</strong><span>${medTakenToday("nurtec75").length ? "กินแล้ววันนี้" : "รอกินแล้ว"}</span></div>
-          <div class="mini">กินครั้งล่าสุด: ${nurtecLast ? `${dateText(nurtecLast.at)} ${timeText(nurtecLast.at)}` : "-"}</div>
-          <div class="mini">กำหนดครั้งถัดไป: ${nextNurtecDue()}</div>
+          <div class="row between"><strong>Nurtec</strong><span>วันเว้นวัน</span></div>
+          <div class="mini">ล่าสุด: ${nurtecLast ? `${dateText(nurtecLast.at)} ${timeText(nurtecLast.at)}` : "-"}</div>
+          <div class="mini">ครั้งถัดไป: ${nextNurtecDue()}</div>
         </div>
         <div class="band">
-          <div class="row between"><strong>Naproxen rule</strong><span>${esc(naproxenPhase())}</span></div>
+          <div class="row between"><strong>Naproxen</strong><span>${esc(naproxenPhase())}</span></div>
           <label class="mini" for="naproxenStart">แก้วันเริ่มยาได้</label>
           <input id="naproxenStart" type="date" value="${esc(naproxenStartDate)}">
         </div>`;
@@ -713,26 +724,27 @@
           render();
         };
       }, 0);
-      document.getElementById("medButtons").innerHTML = MED_SCHEDULE.map(group => `
-        <div class="medgroup">
-          <div class="medtitle">${group.group} <span class="mini">${group.due}</span></div>
+      const orderedSchedule = [...MED_SCHEDULE].sort((a, b) => (a.group === currentGroup ? -1 : b.group === currentGroup ? 1 : 0));
+      document.getElementById("medButtons").innerHTML = orderedSchedule.map(group => `
+        <div class="medgroup ${group.group === currentGroup ? "current" : ""}">
+          <div class="medtitle">${group.group === currentGroup ? "ตอนนี้ · " : ""}${group.group} <span class="mini">${group.due}</span></div>
           <div class="medgrid">${group.meds.map(med => {
             const id = medId(med);
             const status = medStatus(id, group);
             const logs = medTakenToday(id);
             const latest = latestMedLog(id);
             const due = naproxenDue(id, group.due);
-            const doseText = medDose(med);
+            const doseText = medDose(med) || `เวลา ${due}`;
             const special = id === "nurtec75"
-              ? `วันเว้นวัน · ${medDueToday(id) ? "ถึงรอบวันนี้" : "วันนี้ยังไม่ถึงรอบ"} · กินครั้งล่าสุด: ${latest ? timeText(latest.at) : "-"} · กำหนดครั้งถัดไป: ${nextNurtecDue()}`
+              ? (medDueToday(id) ? "ถึงรอบวันนี้" : "ยังไม่ถึงรอบ")
               : isNaproxen(id)
-                ? `${naproxenPhase()} · เวลา ${due}`
-                : `เวลา ${due}`;
+                ? (naproxenStartDate ? naproxenPhase() : "")
+                : "";
             return `<button class="medbtn ${status}" data-med="${esc(id)}">
-              <b>${status === "taken" ? "[x] " : "[ ] "}กินแล้ว · ${esc(medLabel(med))}</b>
-              <span>${logs[0] ? `กินล่าสุด ${timeText(logs[0].at)}` : "แตะเพื่อบันทึกวันที่/เวลา/ชื่อยา"}</span>
-              <span>${esc(doseText)}</span>
-              <span>${esc(special)}</span>
+              <b>${status === "taken" ? "[x] " : "[ ] "}${esc(medLabel(med))}</b>
+              <span class="dose">${esc(doseText)}</span>
+              <span class="${logs[0] ? "last" : ""}">${logs[0] ? `กินล่าสุด ${timeText(logs[0].at)}` : "แตะ = กินแล้ว"}</span>
+              ${special ? `<span>${esc(special)}</span>` : ""}
             </button>`;
           }).join("")}</div>
         </div>`).join("");
