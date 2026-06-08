@@ -31,6 +31,18 @@ A personal-first migraine journal for one user. It is optimized for logging duri
 
 There is no server, login, or fake automatic iCloud sync. Browser/PWA file access on iPhone requires user selection.
 
+## Medication Schedule
+
+- เช้า: Methylphenidate 10 mg x 2, Fluoxetine 20 mg x 2, Propranolol 10 mg x 1, Naproxen 250 mg x 1, Nurtec 75 mg x 1 วันเว้นวัน.
+- กลางวัน: Methylphenidate 10 mg x 2.
+- เย็น: Methylphenidate 10 mg x 2, Propranolol 10 mg x 1, Naproxen 250 mg x 1.
+- ก่อนนอน: Pregabalin 75 mg x 1, Amitriptyline 25 mg x 1, Flunarizine 5 mg x 1.
+
+Special rules:
+- Nurtec shows last taken and next scheduled dose automatically.
+- Naproxen has an editable start date. First 3 days are morning/evening; after that the UI shows every-12-hour timing.
+- Propranolol is morning and evening only.
+
 ## Run
 
 Open `index.html` in a browser. Data is stored locally in `localStorage`.

@@ -336,8 +336,8 @@
       <div class="handle"></div>
       <div class="sheethead"><div class="sheettitle">＋ สั่งยา / รับยา</div><button class="x" data-close>×</button></div>
       <div class="formgrid">
-        <input id="orderDate" type="date">
-        <input id="refillDueDate" type="date">
+        <input id="orderDate" type="date" placeholder="วันสั่งยา">
+        <input id="medEndDate" type="date" placeholder="วันยาหมด">
         <textarea id="refillNote" placeholder="ยา / note"></textarea>
       </div>
       <button class="primary" id="saveRefillEvent">บันทึกวันยา</button>
@@ -354,25 +354,28 @@
     const SLEEP_KEY = "mj_sleep_v1";
     const CAL_KEY = "mj_calendar_v1";
     const LAST_EXPORT_KEY = "mj_last_export_v1";
+    const NAPROXEN_START_KEY = "mj_naproxen_start_v1";
 
     const MED_SCHEDULE = [
-      { group: "MORNING", due: "09:00", meds: [
-        ["fluoxetine40", "Fluoxetine 40 mg", "20 mg x 2 tablets"],
-        ["methylphenidate20_morning", "Methylphenidate 20 mg", "10 mg x 2 tablets"],
-        ["propranolol10_morning", "Propranolol 10 mg", ""],
-        ["naproxen250_morning", "Naproxen 250 mg", ""],
-        ["nurtec75", "Nurtec ODT (Rimegepant) 75 mg", "every other day schedule"]
+      { group: "เช้า (หลังอาหารเช้า)", due: "09:00", meds: [
+        { id: "methylphenidate10x2_morning", name: "Methylphenidate 10 mg x 2 เม็ด", dose: "รวม 20 mg" },
+        { id: "fluoxetine20x2_morning", name: "Fluoxetine 20 mg x 2 เม็ด", dose: "รวม 40 mg" },
+        { id: "propranolol10_morning", name: "Propranolol 10 mg x 1 เม็ด", dose: "" },
+        { id: "naproxen250_morning", name: "Naproxen 250 mg x 1 เม็ด", dose: "ช่วง 3 วันแรก: เช้า 1 เม็ด" },
+        { id: "nurtec75", name: "Nurtec (Rimegepant) 75 mg x 1 เม็ด", dose: "วันเว้นวัน", everyOtherDay: true }
       ]},
-      { group: "MIDDAY", due: "13:00", meds: [["methylphenidate20_midday", "Methylphenidate 20 mg", ""]] },
-      { group: "EVENING", due: "18:00", meds: [
-        ["methylphenidate20_evening", "Methylphenidate 20 mg", ""],
-        ["naproxen250_evening", "Naproxen 250 mg", ""]
+      { group: "กลางวัน (หลังอาหารกลางวัน)", due: "13:00", meds: [
+        { id: "methylphenidate10x2_midday", name: "Methylphenidate 10 mg x 2 เม็ด", dose: "รวม 20 mg" }
       ]},
-      { group: "BEDTIME", due: "22:00", meds: [
-        ["pregabalin75", "Pregabalin 75 mg", ""],
-        ["amitriptyline25", "Amitriptyline 25 mg", ""],
-        ["flunarizine5", "Flunarizine 5 mg", ""],
-        ["propranolol10_bedtime", "Propranolol 10 mg", ""]
+      { group: "เย็น (หลังอาหารเย็น)", due: "18:00", meds: [
+        { id: "methylphenidate10x2_evening", name: "Methylphenidate 10 mg x 2 เม็ด", dose: "รวม 20 mg" },
+        { id: "propranolol10_evening", name: "Propranolol 10 mg x 1 เม็ด", dose: "" },
+        { id: "naproxen250_evening", name: "Naproxen 250 mg x 1 เม็ด", dose: "ช่วง 3 วันแรก: เย็น 1 เม็ด" }
+      ]},
+      { group: "ก่อนนอน", due: "22:00", meds: [
+        { id: "pregabalin75_bedtime", name: "Pregabalin 75 mg x 1 เม็ด", dose: "" },
+        { id: "amitriptyline25_bedtime", name: "Amitriptyline 25 mg x 1 เม็ด", dose: "" },
+        { id: "flunarizine5_bedtime", name: "Flunarizine 5 mg x 1 เม็ด", dose: "" }
       ]}
     ];
 
@@ -403,6 +406,7 @@
     let medLogs = read(MED_KEY, []);
     let sleepLogs = read(SLEEP_KEY, []);
     let calEvents = read(CAL_KEY, []);
+    let naproxenStartDate = localStorage.getItem(NAPROXEN_START_KEY) || "";
     let selectedProdrome = new Set();
     let selectedSide = "ทั้งสองข้าง";
     let selectedSeverity = 7;
@@ -468,9 +472,48 @@
       return [...map.values()];
     }
     function dueDateTime(date, time) { return new Date(`${date}T${time}:00`); }
+    function medId(med) { return Array.isArray(med) ? med[0] : med.id; }
+    function medLabel(med) { return Array.isArray(med) ? med[1] : med.name; }
+    function medDose(med) { return Array.isArray(med) ? (med[2] || "") : (med.dose || ""); }
     function medName(id) {
-      for (const group of MED_SCHEDULE) for (const med of group.meds) if (med[0] === id) return med[1];
+      for (const group of MED_SCHEDULE) for (const med of group.meds) if (medId(med) === id) return medLabel(med);
       return id;
+    }
+    function isNaproxen(id) { return id === "naproxen250_morning" || id === "naproxen250_evening"; }
+    function naproxenPhase() {
+      if (!naproxenStartDate) return "ยังไม่ได้ตั้งวันเริ่มยา";
+      const start = new Date(naproxenStartDate + "T00:00:00");
+      const today = new Date(todayKey() + "T00:00:00");
+      const day = Math.floor((today - start) / 86400000) + 1;
+      return day <= 3 ? `ช่วง 3 วันแรก (วันที่ ${Math.max(day, 1)}/3)` : "หลังครบ 3 วัน: ทุก 12 ชั่วโมง";
+    }
+    function naproxenDue(id, groupDue) {
+      if (!isNaproxen(id) || !naproxenStartDate) return groupDue;
+      const phase = naproxenPhase();
+      if (phase.startsWith("หลังครบ")) return id === "naproxen250_morning" ? "09:00" : "21:00";
+      return groupDue;
+    }
+    function latestMedLog(id) {
+      return medLogs.filter(l => l.medId === id).sort((a, b) => new Date(b.at) - new Date(a.at))[0] || null;
+    }
+    function nextNurtecDue() {
+      const last = latestMedLog("nurtec75");
+      if (!last) return "ยังไม่มีข้อมูล";
+      const d = new Date(last.at);
+      d.setDate(d.getDate() + 2);
+      return d.toLocaleDateString("th-TH", { month: "short", day: "numeric" });
+    }
+    function isNurtecDueToday() {
+      if (medTakenToday("nurtec75").length) return true;
+      const last = latestMedLog("nurtec75");
+      if (!last) return true;
+      const due = new Date(last.at);
+      due.setDate(due.getDate() + 2);
+      return new Date(todayKey() + "T23:59:59") >= due;
+    }
+    function medDueToday(id) {
+      if (id === "nurtec75") return isNurtecDueToday();
+      return true;
     }
     function addEvent(event) {
       events.unshift({ id: uid(), at: nowIso(), ...event });
@@ -482,7 +525,8 @@
     function medTakenToday(id) { return todayMedLogs().filter(l => l.medId === id); }
     function medStatus(id, group) {
       const taken = medTakenToday(id).length > 0;
-      const missed = !taken && new Date() > new Date(dueDateTime(todayKey(), group.due).getTime() + 2 * 60 * 60000);
+      if (!medDueToday(id)) return "";
+      const missed = !taken && new Date() > new Date(dueDateTime(todayKey(), naproxenDue(id, group.due)).getTime() + 2 * 60 * 60000);
       return taken ? "taken" : missed ? "missed" : "";
     }
     function activeAttack() {
@@ -613,15 +657,15 @@
         document.getElementById("napMin").value = existing?.napMinutes ?? "";
       }
       if (id === "doctorEventSheet") {
-        document.getElementById("apptDate").value = todayKey();
+        document.getElementById("apptDate").value = "";
         document.getElementById("apptTime").value = "";
         document.getElementById("apptPlace").value = "";
         document.getElementById("doctorName").value = "";
         document.getElementById("apptNote").value = "";
       }
       if (id === "refillEventSheet") {
-        document.getElementById("orderDate").value = todayKey();
-        document.getElementById("refillDueDate").value = "";
+        document.getElementById("orderDate").value = "";
+        document.getElementById("medEndDate").value = "";
         document.getElementById("refillNote").value = "";
       }
     }
@@ -629,7 +673,7 @@
     function logMedication(id, group) {
       const already = medTakenToday(id).length;
       if (already && !confirm(`${medName(id)} บันทึกไปแล้ววันนี้\nต้องการบันทึกซ้ำจริงไหม?`)) return;
-      const entry = { id: uid(), medId: id, medName: medName(id), group: group.group, due: group.due, at: nowIso(), date: todayKey(), override: already > 0 };
+      const entry = { id: uid(), medId: id, medName: medName(id), group: group.group, due: naproxenDue(id, group.due), at: nowIso(), date: todayKey(), override: already > 0 };
       medLogs.unshift(entry);
       write(MED_KEY, medLogs);
       events.unshift({ id: uid(), type: "medication", at: entry.at, medId: id, medName: entry.medName, group: group.group });
@@ -638,34 +682,64 @@
       render();
     }
 
-    function medPlanCount() { return MED_SCHEDULE.reduce((sum, g) => sum + g.meds.length, 0); }
+    function medPlanCount() { return MED_SCHEDULE.reduce((sum, g) => sum + g.meds.filter(m => medDueToday(medId(m))).length, 0); }
     function renderMeds() {
-      const takenCount = new Set(todayMedLogs().map(l => l.medId)).size;
+      const takenCount = new Set(todayMedLogs().filter(l => medDueToday(l.medId)).map(l => l.medId)).size;
       const total = medPlanCount();
       const missed = [];
-      for (const group of MED_SCHEDULE) for (const med of group.meds) if (medStatus(med[0], group) === "missed") missed.push(med[1]);
+      for (const group of MED_SCHEDULE) for (const med of group.meds) if (medDueToday(medId(med)) && medStatus(medId(med), group) === "missed") missed.push(medLabel(med));
+      const nurtecLast = latestMedLog("nurtec75");
       document.getElementById("adherenceMini").innerHTML = `${takenCount}/${total}<br>ยา`;
       document.getElementById("medSummary").innerHTML = `
         <div class="band ${missed.length ? "danger" : "ok"}">
           <div class="row between"><strong>วันนี้กินแล้ว ${takenCount}/${total}</strong><span>${Math.round(takenCount / total * 100)}%</span></div>
           ${missed.length ? `<div class="mini" style="margin-top:8px">ยังไม่เห็นบันทึก: ${missed.map(esc).join(", ")}</div>` : `<div class="mini" style="margin-top:8px">ยังไม่มีรายการที่เลยเวลา</div>`}
+        </div>
+        <div class="band">
+          <div class="row between"><strong>Nurtec วันเว้นวัน</strong><span>${medTakenToday("nurtec75").length ? "กินแล้ววันนี้" : "รอกินแล้ว"}</span></div>
+          <div class="mini">กินครั้งล่าสุด: ${nurtecLast ? `${dateText(nurtecLast.at)} ${timeText(nurtecLast.at)}` : "-"}</div>
+          <div class="mini">กำหนดครั้งถัดไป: ${nextNurtecDue()}</div>
+        </div>
+        <div class="band">
+          <div class="row between"><strong>Naproxen rule</strong><span>${esc(naproxenPhase())}</span></div>
+          <label class="mini" for="naproxenStart">แก้วันเริ่มยาได้</label>
+          <input id="naproxenStart" type="date" value="${esc(naproxenStartDate)}">
         </div>`;
+      setTimeout(() => {
+        const input = document.getElementById("naproxenStart");
+        if (input) input.onchange = () => {
+          naproxenStartDate = input.value;
+          localStorage.setItem(NAPROXEN_START_KEY, naproxenStartDate);
+          render();
+        };
+      }, 0);
       document.getElementById("medButtons").innerHTML = MED_SCHEDULE.map(group => `
         <div class="medgroup">
           <div class="medtitle">${group.group} <span class="mini">${group.due}</span></div>
           <div class="medgrid">${group.meds.map(med => {
-            const status = medStatus(med[0], group);
-            const logs = medTakenToday(med[0]);
-            return `<button class="medbtn ${status}" data-med="${esc(med[0])}">
-              <b>${status === "taken" ? "✓ " : status === "missed" ? "ยังไม่ได้ " : ""}${esc(med[1])}</b>
-              <span>${esc(med[2] || (logs[0] ? "กินแล้ว " + timeText(logs[0].at) : "แตะเพื่อบันทึก"))}</span>
+            const id = medId(med);
+            const status = medStatus(id, group);
+            const logs = medTakenToday(id);
+            const latest = latestMedLog(id);
+            const due = naproxenDue(id, group.due);
+            const doseText = medDose(med);
+            const special = id === "nurtec75"
+              ? `วันเว้นวัน · ${medDueToday(id) ? "ถึงรอบวันนี้" : "วันนี้ยังไม่ถึงรอบ"} · กินครั้งล่าสุด: ${latest ? timeText(latest.at) : "-"} · กำหนดครั้งถัดไป: ${nextNurtecDue()}`
+              : isNaproxen(id)
+                ? `${naproxenPhase()} · เวลา ${due}`
+                : `เวลา ${due}`;
+            return `<button class="medbtn ${status}" data-med="${esc(id)}">
+              <b>${status === "taken" ? "[x] " : "[ ] "}กินแล้ว · ${esc(medLabel(med))}</b>
+              <span>${logs[0] ? `กินล่าสุด ${timeText(logs[0].at)}` : "แตะเพื่อบันทึกวันที่/เวลา/ชื่อยา"}</span>
+              <span>${esc(doseText)}</span>
+              <span>${esc(special)}</span>
             </button>`;
           }).join("")}</div>
         </div>`).join("");
       document.querySelectorAll("[data-med]").forEach(btn => {
         btn.onclick = () => {
           const id = btn.dataset.med;
-          const group = MED_SCHEDULE.find(g => g.meds.some(m => m[0] === id));
+          const group = MED_SCHEDULE.find(g => g.meds.some(m => medId(m) === id));
           logMedication(id, group);
         };
       });
@@ -704,7 +778,7 @@
     function renderReminders() {
       const soon = upcomingCalendar().filter(e => e.days <= 7);
       const missed = [];
-      for (const group of MED_SCHEDULE) for (const med of group.meds) if (medStatus(med[0], group) === "missed") missed.push(med[1]);
+      for (const group of MED_SCHEDULE) for (const med of group.meds) if (medStatus(medId(med), group) === "missed") missed.push(medLabel(med));
       const parts = [];
       if (needsBackup()) parts.push(`<div class="band warn"><strong>ยังไม่ได้ backup วันนี้</strong><div class="mini">Export ไป Files / iCloud Drive เพื่อใช้ข้ามเครื่อง</div></div>`);
       if (missed.length) parts.push(`<div class="band danger"><strong>ยาเลยเวลา</strong><div class="mini">${missed.map(esc).join(", ")}</div></div>`);
@@ -714,11 +788,17 @@
     }
     function upcomingCalendar() {
       const start = new Date(todayKey() + "T00:00:00");
-      return calEvents.map(e => {
-        const date = e.type === "refill" ? e.refillDueDate : e.date;
+      const items = [];
+      calEvents.forEach(e => {
+        if (e.type === "appointment" && e.date) items.push({ ...e, date: e.date, label: `นัดหมอ ${e.date} ${e.time || ""} ${e.place || ""}` });
+        if (e.type === "refill" && e.orderDate) items.push({ ...e, date: e.orderDate, calendarKind: "order", label: `วันสั่งยา ${e.orderDate}` });
+        const endDate = e.medEndDate || e.refillDueDate;
+        if (e.type === "refill" && endDate) items.push({ ...e, date: endDate, calendarKind: "medEnd", label: `วันยาหมด ${endDate}` });
+      });
+      return items.map(e => {
+        const date = e.date;
         const d = new Date(date + "T00:00:00");
         const days = Math.ceil((d - start) / 86400000);
-        const label = e.type === "appointment" ? `นัดหมอ ${date} ${e.time || ""} ${e.place || ""}` : `สั่งยา/รับยา ${date}`;
         return { ...e, date, days, label };
       }).filter(e => e.days >= 0).sort((a, b) => a.days - b.days);
     }
@@ -727,7 +807,7 @@
       document.getElementById("calendarList").innerHTML = upcoming.length ? upcoming.map(e => `
         <div class="band ${e.days <= 7 ? "warn" : ""}">
           <div class="row between"><strong>${e.type === "appointment" ? "นัดหมอ" : "สั่งยา / รับยา"}</strong><span>${esc(e.date)}</span></div>
-          <div class="mini">${esc(e.type === "appointment" ? `${e.time || ""} ${e.place || ""} ${e.doctor || ""}` : `order ${e.orderDate || "-"} · due ${e.refillDueDate || "-"}`)}</div>
+          <div class="mini">${esc(e.type === "appointment" ? `${e.time || ""} ${e.place || ""} ${e.doctor || ""}` : `วันสั่งยา ${e.orderDate || "-"} · วันยาหมด ${e.medEndDate || e.refillDueDate || "-"}`)}</div>
           ${e.note ? `<div class="mini">${esc(e.note)}</div>` : ""}
         </div>`).join("") : `<div class="empty">ยังไม่มี calendar event</div>`;
     }
@@ -904,8 +984,8 @@
         calEvents.unshift(entry); write(CAL_KEY, calEvents); closeSheets(); toast("บันทึกนัดหมอแล้ว"); render();
       };
       document.getElementById("saveRefillEvent").onclick = () => {
-        const entry = { id: uid(), type: "refill", orderDate: document.getElementById("orderDate").value, refillDueDate: document.getElementById("refillDueDate").value, note: document.getElementById("refillNote").value.trim(), createdAt: nowIso() };
-        if (!entry.refillDueDate) return toast("ใส่ refill due date ก่อน");
+        const entry = { id: uid(), type: "refill", orderDate: document.getElementById("orderDate").value, medEndDate: document.getElementById("medEndDate").value, note: document.getElementById("refillNote").value.trim(), createdAt: nowIso() };
+        if (!entry.orderDate && !entry.medEndDate) return toast("ใส่วันสั่งยาหรือวันยาหมดก่อน");
         calEvents.unshift(entry); write(CAL_KEY, calEvents); closeSheets(); toast("บันทึกวันยาแล้ว"); render();
       };
 
