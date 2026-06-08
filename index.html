@@ -1,255 +1,169 @@
 <!doctype html>
-<html lang="en">
+<html lang="th">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#111318">
-  <title>Migraine Pattern Journal</title>
+  <meta name="theme-color" content="#101217">
+  <title>Migraine Journal</title>
   <style>
     :root {
-      --bg: #111318;
-      --panel: #181b22;
-      --panel-2: #20242d;
-      --line: rgba(255,255,255,.09);
-      --text: #f6f1ea;
-      --muted: #a8adb7;
-      --hot: #f06f8f;
-      --hot-2: #ffb1c4;
-      --sun: #f8c654;
-      --leaf: #62d28f;
-      --sky: #72b7ff;
-      --mist: #c4b5fd;
-      --shadow: 0 18px 48px rgba(0,0,0,.32);
+      --bg: #101217;
+      --panel: #181c24;
+      --panel2: #222733;
+      --line: rgba(255,255,255,.1);
+      --text: #f8f4ef;
+      --muted: #abb1bd;
+      --pink: #ff8faf;
+      --pink2: #ffd1dc;
+      --yellow: #f7c84f;
+      --green: #61d394;
+      --blue: #77bbff;
+      --violet: #c7b7ff;
+      --red: #ff7474;
       --r: 14px;
     }
 
     * { box-sizing: border-box; }
-    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    html, body { height: 100%; margin: 0; background: var(--bg); color: var(--text); font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     body { overflow: hidden; }
     button, input, textarea { font: inherit; }
     button { -webkit-tap-highlight-color: transparent; }
-
     #app { height: 100dvh; display: grid; grid-template-rows: 1fr auto; }
-    main { overflow: auto; padding: 18px 16px 104px; }
-    .screen { display: none; max-width: 760px; margin: 0 auto; }
+    main { overflow: auto; padding: 16px 14px 106px; }
+    .screen { display: none; max-width: 820px; margin: 0 auto; }
     .screen.on { display: block; }
-    .top { padding: 22px 2px 18px; display: flex; justify-content: space-between; gap: 16px; align-items: flex-end; }
-    h1 { margin: 0; font-size: 30px; line-height: 1; letter-spacing: 0; }
-    .sub { color: var(--muted); font-size: 13px; margin-top: 7px; }
-    .streak { text-align: right; color: var(--sun); font-weight: 800; }
-    .streak span { display: block; color: var(--muted); font-size: 11px; font-weight: 600; }
+    .top { display: flex; align-items: end; justify-content: space-between; gap: 14px; padding: 22px 2px 16px; }
+    h1 { margin: 0; font-size: 32px; line-height: 1.05; letter-spacing: 0; }
+    .sub { color: var(--muted); font-size: 14px; margin-top: 6px; }
+    .mini { color: var(--muted); font-size: 12px; }
+    .label { color: var(--muted); font-size: 12px; font-weight: 900; letter-spacing: .07em; text-transform: uppercase; margin: 24px 2px 10px; }
+    .band { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; margin-bottom: 10px; }
+    .danger { border-color: rgba(255,116,116,.38); background: linear-gradient(145deg, rgba(255,116,116,.16), var(--panel)); }
+    .warn { border-color: rgba(247,200,79,.38); background: linear-gradient(145deg, rgba(247,200,79,.15), var(--panel)); }
+    .ok { border-color: rgba(97,211,148,.34); background: linear-gradient(145deg, rgba(97,211,148,.12), var(--panel)); }
+    .row { display: flex; align-items: center; gap: 10px; }
+    .between { justify-content: space-between; }
+    .pillrow { display: flex; flex-wrap: wrap; gap: 7px; }
+    .pill { background: var(--panel2); border-radius: 999px; padding: 6px 10px; font-size: 13px; }
+    .empty { color: var(--muted); padding: 26px 14px; text-align: center; }
 
-    .quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .quick-grid .wide { grid-column: 1 / -1; }
-    .action {
+    .quick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .bigbtn {
       border: 1px solid var(--line);
       background: var(--panel);
       color: var(--text);
-      min-height: 92px;
-      padding: 16px;
       border-radius: var(--r);
+      min-height: 94px;
+      padding: 15px;
       text-align: left;
+      cursor: pointer;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      cursor: pointer;
+      gap: 8px;
     }
-    .action:active, .chip:active, .nav-btn:active, .primary:active { transform: scale(.98); }
-    .action strong { display: block; font-size: 17px; }
-    .action small { color: var(--muted); font-size: 12px; }
-    .action.mist { background: linear-gradient(145deg, rgba(196,181,253,.18), rgba(24,27,34,.98)); border-color: rgba(196,181,253,.3); }
-    .action.hot { background: linear-gradient(145deg, rgba(240,111,143,.2), rgba(24,27,34,.98)); border-color: rgba(240,111,143,.34); }
-    .action.leaf { background: linear-gradient(145deg, rgba(98,210,143,.18), rgba(24,27,34,.98)); border-color: rgba(98,210,143,.3); }
-    .action.sky { background: linear-gradient(145deg, rgba(114,183,255,.17), rgba(24,27,34,.98)); border-color: rgba(114,183,255,.3); }
-    .emoji { font-size: 28px; line-height: 1; }
+    .bigbtn strong { font-size: 20px; line-height: 1.1; }
+    .bigbtn small { color: var(--muted); font-size: 13px; }
+    .bigbtn:active, .chip:active, .medbtn:active, .navbtn:active, .primary:active { transform: scale(.98); }
+    .wide { grid-column: 1 / -1; }
+    .pink { background: linear-gradient(145deg, rgba(255,143,175,.2), var(--panel)); border-color: rgba(255,143,175,.38); }
+    .violet { background: linear-gradient(145deg, rgba(199,183,255,.18), var(--panel)); border-color: rgba(199,183,255,.34); }
+    .blue { background: linear-gradient(145deg, rgba(119,187,255,.16), var(--panel)); border-color: rgba(119,187,255,.32); }
+    .green { background: linear-gradient(145deg, rgba(97,211,148,.16), var(--panel)); border-color: rgba(97,211,148,.32); }
+    .yellow { background: linear-gradient(145deg, rgba(247,200,79,.16), var(--panel)); border-color: rgba(247,200,79,.34); }
+    .ico { font-size: 30px; line-height: 1; }
 
-    .band, .card {
-      background: var(--panel);
+    .medgroup { margin-bottom: 16px; }
+    .medtitle { font-size: 15px; color: var(--yellow); font-weight: 900; margin: 0 0 8px; }
+    .medgrid { display: grid; gap: 9px; }
+    .medbtn {
+      min-height: 70px;
       border: 1px solid var(--line);
       border-radius: var(--r);
-      padding: 14px;
-    }
-    .band { margin-top: 14px; }
-    .label { color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin: 22px 2px 10px; }
-    .row { display: flex; align-items: center; gap: 12px; }
-    .row.between { justify-content: space-between; }
-    .pill-row { display: flex; flex-wrap: wrap; gap: 7px; }
-    .pill { background: var(--panel-2); color: var(--text); border-radius: 999px; padding: 5px 10px; font-size: 12px; }
-    .muted { color: var(--muted); }
-    .empty { color: var(--muted); text-align: center; padding: 34px 18px; }
-
-    .timeline { position: relative; margin-left: 8px; }
-    .timeline::before { content: ""; position: absolute; top: 4px; bottom: 4px; left: 70px; width: 2px; background: var(--line); }
-    .event {
-      position: relative;
-      display: grid;
-      grid-template-columns: 58px 1fr;
-      gap: 22px;
-      margin-bottom: 11px;
-      align-items: start;
-    }
-    .time { color: var(--muted); font-size: 12px; padding-top: 12px; text-align: right; }
-    .event-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 13px; }
-    .event-card::before {
-      content: "";
-      position: absolute;
-      left: 64px;
-      top: 17px;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: var(--panel);
-      border: 2px solid var(--mist);
-    }
-    .event.attack_start .event-card::before { border-color: var(--hot); }
-    .event.attack_resolved .event-card::before { border-color: var(--leaf); }
-    .event.medication .event-card::before { border-color: var(--sky); }
-    .event.morning_checkin .event-card::before { border-color: var(--sun); }
-    .event-title { font-weight: 800; margin-bottom: 7px; }
-    .meta { color: var(--muted); font-size: 12px; margin-top: 7px; }
-
-    .pattern {
-      background: linear-gradient(145deg, rgba(248,198,84,.16), rgba(24,27,34,.98));
-      border-color: rgba(248,198,84,.3);
-    }
-    .pattern strong { color: var(--sun); }
-
-    nav {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 4px;
-      background: rgba(17,19,24,.95);
-      border-top: 1px solid var(--line);
-      padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
-      backdrop-filter: blur(16px);
-    }
-    .nav-btn {
-      background: transparent;
-      border: 0;
-      color: var(--muted);
-      border-radius: 10px;
-      padding: 8px 4px;
-      font-size: 11px;
-      display: grid;
-      gap: 3px;
-      place-items: center;
-      cursor: pointer;
-    }
-    .nav-btn span { font-size: 20px; }
-    .nav-btn.on { color: var(--text); background: var(--panel-2); }
-
-    .sheet-wrap {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.62);
-      display: none;
-      align-items: end;
-      z-index: 10;
-    }
-    .sheet-wrap.on { display: flex; }
-    .sheet {
-      width: 100%;
-      max-height: 92dvh;
-      overflow: auto;
-      background: #171a21;
-      border-radius: 22px 22px 0 0;
-      padding: 10px 16px calc(18px + env(safe-area-inset-bottom));
-      box-shadow: var(--shadow);
-    }
-    .handle { width: 38px; height: 4px; background: var(--line); border-radius: 999px; margin: 4px auto 14px; }
-    .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-    .sheet-title { font-size: 20px; font-weight: 900; }
-    .icon-btn { border: 0; background: var(--panel-2); color: var(--muted); border-radius: 50%; width: 36px; height: 36px; cursor: pointer; }
-
-    .chip-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
-    .chip {
-      border: 1px solid var(--line);
-      background: var(--panel);
       color: var(--text);
-      min-height: 56px;
-      border-radius: 12px;
-      padding: 10px;
+      background: var(--panel);
+      padding: 12px;
       text-align: left;
       cursor: pointer;
     }
-    .chip.on { border-color: var(--mist); background: rgba(196,181,253,.18); }
-    .chip.hot.on { border-color: var(--hot); background: rgba(240,111,143,.18); }
-    .chip small { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
-    .primary {
-      width: 100%;
-      border: 0;
-      color: #1b1016;
-      background: var(--hot-2);
-      border-radius: 13px;
-      padding: 15px;
-      font-weight: 900;
-      margin-top: 14px;
-      cursor: pointer;
-    }
-    .secondary {
-      width: 100%;
-      border: 1px solid var(--line);
-      color: var(--muted);
-      background: var(--panel);
-      border-radius: 13px;
-      padding: 13px;
-      font-weight: 800;
-      margin-top: 9px;
-      cursor: pointer;
-    }
-    .seg { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
-    .seg.three { grid-template-columns: repeat(3, 1fr); }
-    .seg button {
-      border: 1px solid var(--line);
-      background: var(--panel);
-      color: var(--text);
-      border-radius: 12px;
-      min-height: 50px;
-      cursor: pointer;
-    }
-    .seg button.on { border-color: var(--hot); background: rgba(240,111,143,.18); }
-    .range-row { display: grid; grid-template-columns: 1fr 58px; gap: 12px; align-items: center; }
-    input[type=range] { width: 100%; accent-color: var(--hot); }
-    .big-number { text-align: center; font-size: 30px; font-weight: 900; color: var(--hot-2); }
-    textarea {
-      width: 100%;
-      min-height: 70px;
-      resize: vertical;
-      border-radius: 12px;
-      border: 1px solid var(--line);
-      background: var(--panel);
-      color: var(--text);
-      padding: 12px;
-    }
-    .toast {
-      position: fixed;
-      left: 50%;
-      bottom: 88px;
-      transform: translateX(-50%) translateY(18px);
-      opacity: 0;
-      pointer-events: none;
-      background: var(--leaf);
-      color: #07170d;
-      padding: 10px 16px;
-      border-radius: 999px;
-      font-weight: 900;
-      transition: .2s ease;
-      z-index: 20;
-      white-space: nowrap;
-    }
-    .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
-    .report-block { white-space: pre-wrap; line-height: 1.55; font-size: 14px; }
+    .medbtn b { display: block; font-size: 17px; line-height: 1.15; }
+    .medbtn span { color: var(--muted); font-size: 12px; display: block; margin-top: 4px; }
+    .medbtn.taken { border-color: rgba(97,211,148,.42); background: rgba(97,211,148,.12); }
+    .medbtn.missed { border-color: rgba(255,116,116,.44); background: rgba(255,116,116,.12); }
 
-    @media (min-width: 720px) {
-      main { padding-top: 26px; }
-      .quick-grid { grid-template-columns: repeat(4, 1fr); }
-      .quick-grid .wide { grid-column: span 2; }
-      .sheet { max-width: 560px; margin: 0 auto; border-radius: 22px 22px 0 0; }
-      .chip-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .timeline { position: relative; margin-left: 4px; }
+    .timeline:before { content: ""; position: absolute; top: 8px; bottom: 8px; left: 62px; width: 2px; background: var(--line); }
+    .event { position: relative; display: grid; grid-template-columns: 52px 1fr; gap: 22px; margin-bottom: 10px; }
+    .time { color: var(--muted); font-size: 12px; text-align: right; padding-top: 13px; }
+    .eventcard { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; }
+    .eventcard:before { content: ""; position: absolute; left: 56px; top: 16px; width: 14px; height: 14px; border-radius: 50%; background: var(--panel); border: 2px solid var(--violet); }
+    .event.medication .eventcard:before { border-color: var(--yellow); }
+    .event.attack_start .eventcard:before { border-color: var(--pink); }
+    .event.improved .eventcard:before { border-color: var(--green); }
+    .event.sleep .eventcard:before { border-color: var(--blue); }
+    .event.calendar .eventcard:before { border-color: var(--yellow); }
+    .etitle { font-weight: 900; margin-bottom: 7px; }
+    .report { white-space: pre-wrap; line-height: 1.55; font-size: 14px; }
+
+    nav { position: fixed; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); background: rgba(16,18,23,.96); border-top: 1px solid var(--line); backdrop-filter: blur(16px); }
+    .navbtn { background: transparent; border: 0; color: var(--muted); border-radius: 11px; padding: 8px 2px; cursor: pointer; display: grid; place-items: center; gap: 2px; font-size: 10px; }
+    .navbtn span { font-size: 19px; }
+    .navbtn.on { color: var(--text); background: var(--panel2); }
+
+    .sheetwrap { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.68); z-index: 10; align-items: end; }
+    .sheetwrap.on { display: flex; }
+    .sheet { width: 100%; max-height: 92dvh; overflow: auto; background: #171a21; border-radius: 22px 22px 0 0; padding: 10px 14px calc(18px + env(safe-area-inset-bottom)); }
+    .handle { width: 38px; height: 4px; border-radius: 999px; background: var(--line); margin: 4px auto 14px; }
+    .sheethead { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .sheettitle { font-size: 22px; font-weight: 950; }
+    .x { border: 0; background: var(--panel2); color: var(--muted); width: 38px; height: 38px; border-radius: 50%; cursor: pointer; }
+    .chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+    .chips.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .chip {
+      min-height: 58px;
+      border: 1px solid var(--line);
+      border-radius: var(--r);
+      background: var(--panel);
+      color: var(--text);
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+      font-weight: 800;
+    }
+    .chip.on { border-color: var(--pink); background: rgba(255,143,175,.18); }
+    .primary, .secondary {
+      width: 100%;
+      border-radius: var(--r);
+      padding: 16px;
+      margin-top: 12px;
+      font-weight: 950;
+      cursor: pointer;
+      border: 0;
+    }
+    .primary { background: var(--pink2); color: #221016; }
+    .secondary { background: var(--panel); color: var(--muted); border: 1px solid var(--line); }
+    .formgrid { display: grid; gap: 10px; }
+    input, textarea {
+      width: 100%;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      color: var(--text);
+      min-height: 52px;
+      padding: 12px;
+      font-size: 16px;
+    }
+    textarea { min-height: 74px; resize: vertical; }
+    .toast { position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%) translateY(18px); opacity: 0; background: var(--green); color: #07180d; padding: 11px 17px; border-radius: 999px; font-weight: 950; transition: .2s; pointer-events: none; z-index: 20; white-space: nowrap; }
+    .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (min-width: 760px) {
+      main { padding-top: 24px; }
+      .quick { grid-template-columns: repeat(4, 1fr); }
+      .wide { grid-column: span 2; }
+      .medgrid { grid-template-columns: repeat(2, 1fr); }
+      .sheet { max-width: 620px; margin: 0 auto; }
+      .chips { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
   </style>
 </head>
@@ -259,514 +173,631 @@
       <section id="today" class="screen on">
         <div class="top">
           <div>
-            <h1>Today</h1>
+            <h1>วันนี้</h1>
             <div class="sub" id="todayDate"></div>
           </div>
-          <div class="streak" id="streakBox"></div>
+          <div class="mini" id="adherenceMini"></div>
         </div>
 
-        <div class="quick-grid">
-          <button class="action mist wide" data-open="prodrome">
-            <span class="emoji">🌫️</span>
-            <span><strong>Something Feels Off</strong><small>นอย, ใจเต้นเร็ว, ตาเบลอ</small></span>
-          </button>
-          <button class="action hot" data-open="attack">
-            <span class="emoji">🤕</span>
-            <span><strong>Migraine</strong><small>Intensity + location</small></span>
-          </button>
-          <button class="action leaf" id="resolveBtn">
-            <span class="emoji">😮‍💨</span>
-            <span><strong>Resolved</strong><small>One tap when it ends</small></span>
-          </button>
-          <button class="action sky" data-open="morning">
-            <span class="emoji">☀️</span>
-            <span><strong>Morning</strong><small>3 taps, no typing</small></span>
-          </button>
+        <div id="reminders"></div>
+
+        <div class="quick">
+          <button class="bigbtn yellow wide" data-screen="meds"><span class="ico">💊</span><strong>กินยาแล้ว</strong><small>แตะชื่อยา = บันทึกทันที</small></button>
+          <button class="bigbtn violet" data-open="prodrome"><span class="ico">⚡</span><strong>เริ่มรู้สึกแปลก</strong><small>prodrome</small></button>
+          <button class="bigbtn pink" data-open="attack"><span class="ico">💥</span><strong>เริ่มปวดหัว</strong><small>large buttons only</small></button>
+          <button class="bigbtn green" id="improveQuick"><span class="ico">😌</span><strong>ดีขึ้นแล้ว</strong><small>แตะเมื่ออาการลง</small></button>
+          <button class="bigbtn blue" data-open="sleep"><span class="ico">🌅</span><strong>ตื่นมาปวดหัวไหม</strong><small>sleep log</small></button>
         </div>
 
-        <div id="activeEpisode"></div>
-        <div class="label">Today Timeline</div>
+        <div class="label">วันนี้เกิดอะไรขึ้น</div>
         <div id="todayTimeline"></div>
+      </section>
+
+      <section id="meds" class="screen">
+        <div class="top">
+          <div>
+            <h1>💊 กินยาแล้ว</h1>
+            <div class="sub">One tap. บันทึกเวลาอัตโนมัติ.</div>
+          </div>
+        </div>
+        <div id="medSummary"></div>
+        <div id="medButtons"></div>
+        <div class="label">ประวัติยาวันนี้</div>
+        <div id="medHistory"></div>
       </section>
 
       <section id="timeline" class="screen">
         <div class="top">
           <div>
-            <h1>Timeline</h1>
-            <div class="sub">The story, not the spreadsheet</div>
+            <h1>ไทม์ไลน์</h1>
+            <div class="sub">เอาไว้ดู pattern ก่อนปวดหัว</div>
           </div>
         </div>
         <div id="allTimeline"></div>
       </section>
 
-      <section id="patterns" class="screen">
+      <section id="calendar" class="screen">
         <div class="top">
           <div>
-            <h1>Patterns</h1>
-            <div class="sub">Signals before attacks</div>
+            <h1>📅 ปฏิทินสุขภาพ</h1>
+            <div class="sub">นัดหมอและวันสั่งยา/รับยา</div>
           </div>
         </div>
-        <div id="patternsContent"></div>
+        <div class="quick">
+          <button class="bigbtn blue" data-open="doctorEvent"><span class="ico">＋</span><strong>นัดหมอ</strong><small>date, time, clinic</small></button>
+          <button class="bigbtn yellow" data-open="refillEvent"><span class="ico">＋</span><strong>สั่งยา / รับยา</strong><small>refill due date</small></button>
+        </div>
+        <div class="label">เตือนในแอป</div>
+        <div id="calendarReminders"></div>
+        <div class="label">ไทม์ไลน์ปฏิทิน</div>
+        <div id="calendarList"></div>
       </section>
 
       <section id="report" class="screen">
         <div class="top">
           <div>
-            <h1>Report</h1>
-            <div class="sub">User language translated for neurology visits</div>
+            <h1>รายงานหมอ</h1>
+            <div class="sub">แปลภาษาที่ใช้จริงเป็น clinical language</div>
           </div>
         </div>
-        <div class="band report-block" id="doctorReport"></div>
+        <div class="band report" id="doctorReport"></div>
       </section>
     </main>
 
     <nav>
-      <button class="nav-btn on" data-screen="today"><span>⚡</span>Today</button>
-      <button class="nav-btn" data-screen="timeline"><span>🕰️</span>Timeline</button>
-      <button class="nav-btn" data-screen="patterns"><span>🔎</span>Patterns</button>
-      <button class="nav-btn" data-screen="report"><span>🩺</span>Report</button>
+      <button class="navbtn on" data-screen="today"><span>⚡</span>วันนี้</button>
+      <button class="navbtn" data-screen="meds"><span>💊</span>ยา</button>
+      <button class="navbtn" data-screen="timeline"><span>🕰️</span>ไทม์ไลน์</button>
+      <button class="navbtn" data-screen="calendar"><span>📅</span>ปฏิทิน</button>
+      <button class="navbtn" data-screen="report"><span>🩺</span>รายงาน</button>
     </nav>
   </div>
 
-  <div class="sheet-wrap" id="prodromeSheet">
+  <div class="sheetwrap" id="prodromeSheet">
     <div class="sheet">
       <div class="handle"></div>
-      <div class="sheet-head"><div class="sheet-title">🌫️ Something Feels Off</div><button class="icon-btn" data-close>×</button></div>
-      <div class="chip-grid" id="prodromeChips"></div>
-      <button class="primary" id="saveProdrome">Save. Done.</button>
-      <button class="secondary" data-close>Cancel</button>
+      <div class="sheethead"><div class="sheettitle">⚡ เริ่มรู้สึกแปลก</div><button class="x" data-close>×</button></div>
+      <div class="chips" id="prodromeChips"></div>
+      <button class="primary" id="saveProdrome">บันทึก</button>
+      <button class="secondary" data-close>ยกเลิก</button>
     </div>
   </div>
 
-  <div class="sheet-wrap" id="attackSheet">
+  <div class="sheetwrap" id="attackSheet">
     <div class="sheet">
       <div class="handle"></div>
-      <div class="sheet-head"><div class="sheet-title">🤕 Migraine Attack</div><button class="icon-btn" data-close>×</button></div>
-      <div class="label">Intensity</div>
-      <div class="range-row">
-        <input id="attackIntensity" type="range" min="1" max="10" value="7">
-        <div class="big-number" id="attackIntensityValue">7</div>
-      </div>
-      <div class="label">Location</div>
-      <div class="chip-grid" id="locationChips"></div>
-      <div class="label">Medication, optional</div>
-      <div class="chip-grid" id="medChips"></div>
-      <button class="primary" id="saveAttack">Save Attack</button>
-      <button class="secondary" data-close>Cancel</button>
+      <div class="sheethead"><div class="sheettitle">💥 เริ่มปวดหัว</div><button class="x" data-close>×</button></div>
+      <div class="label">ข้างไหน</div>
+      <div class="chips three" id="sideChips"></div>
+      <div class="label">ปวดกี่คะแนน</div>
+      <div class="chips" id="severityChips"></div>
+      <div class="label">มีไหม</div>
+      <div class="chips" id="attackSymptomChips"></div>
+      <button class="primary" id="saveAttack">บันทึกเริ่มปวด</button>
+      <button class="secondary" data-close>ยกเลิก</button>
     </div>
   </div>
 
-  <div class="sheet-wrap" id="morningSheet">
+  <div class="sheetwrap" id="improveSheet">
     <div class="sheet">
       <div class="handle"></div>
-      <div class="sheet-head"><div class="sheet-title">☀️ Morning Check-In</div><button class="icon-btn" data-close>×</button></div>
-      <div class="label">Sleep</div>
-      <div class="seg three" id="sleepSeg">
-        <button data-value="bad">😵</button><button data-value="ok" class="on">😐</button><button data-value="good">🙂</button>
+      <div class="sheethead"><div class="sheettitle">😌 ดีขึ้นแล้ว</div><button class="x" data-close>×</button></div>
+      <div class="label">ตอนนี้เหลือปวดกี่คะแนน</div>
+      <div class="chips" id="improvePainChips"></div>
+      <button class="primary" id="saveImproved">บันทึกว่าดีขึ้นแล้ว</button>
+      <button class="secondary" data-close>ยกเลิก</button>
+    </div>
+  </div>
+
+  <div class="sheetwrap" id="sleepSheet">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheethead"><div class="sheettitle">🌅 วันนี้ตื่นมาปวดหัวไหม</div><button class="x" data-close>×</button></div>
+      <div class="chips" id="wakeHeadacheChips"></div>
+      <div class="label">เวลานอน / เวลาตื่น / งีบ</div>
+      <div class="formgrid">
+        <input id="bedtime" type="time" aria-label="bedtime">
+        <input id="waketime" type="time" aria-label="wake time">
+        <input id="napMin" type="number" min="0" inputmode="numeric" placeholder="งีบกี่นาที (ถ้าไม่มีใส่ 0)">
       </div>
-      <div class="label">Mood</div>
-      <div class="seg three" id="moodSeg">
-        <button data-value="นอย">นอย</button><button data-value="ok" class="on">ok</button><button data-value="good">good</button>
+      <button class="primary" id="saveSleep">บันทึก sleep</button>
+      <button class="secondary" data-close>ยกเลิก</button>
+    </div>
+  </div>
+
+  <div class="sheetwrap" id="doctorEventSheet">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheethead"><div class="sheettitle">＋ นัดหมอ</div><button class="x" data-close>×</button></div>
+      <div class="formgrid">
+        <input id="apptDate" type="date">
+        <input id="apptTime" type="time">
+        <input id="apptPlace" type="text" placeholder="โรงพยาบาล / คลินิก">
+        <input id="doctorName" type="text" placeholder="ชื่อหมอ">
+        <textarea id="apptNote" placeholder="note"></textarea>
       </div>
-      <div class="label">Morning body</div>
-      <div class="chip-grid" id="morningChips"></div>
-      <button class="primary" id="saveMorning">Save Check-In</button>
-      <button class="secondary" data-close>Cancel</button>
+      <button class="primary" id="saveDoctorEvent">บันทึกนัดหมอ</button>
+      <button class="secondary" data-close>ยกเลิก</button>
+    </div>
+  </div>
+
+  <div class="sheetwrap" id="refillEventSheet">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheethead"><div class="sheettitle">＋ สั่งยา / รับยา</div><button class="x" data-close>×</button></div>
+      <div class="formgrid">
+        <input id="orderDate" type="date">
+        <input id="refillDueDate" type="date">
+        <textarea id="refillNote" placeholder="ยา / note"></textarea>
+      </div>
+      <button class="primary" id="saveRefillEvent">บันทึกวันยา</button>
+      <button class="secondary" data-close>ยกเลิก</button>
     </div>
   </div>
 
   <div class="toast" id="toast"></div>
 
   <script>
-    const STORE_KEY = "migraine_pattern_events_v1";
+    const EVENT_KEY = "mj_events_v2";
+    const MED_KEY = "mj_meds_v2";
+    const SLEEP_KEY = "mj_sleep_v1";
+    const CAL_KEY = "mj_calendar_v1";
 
-    const TERMS = {
-      "นอย": { icon: "😵‍💫", clinical: ["Mood change", "Irritability", "Prodrome symptom"] },
-      "หาเรื่องนอย": { icon: "🧠", clinical: ["Prodrome mood disturbance"] },
-      "ใจเต้นเร็ว": { icon: "💓", clinical: ["Palpitations", "Tachycardia", "Autonomic symptom"] },
-      "แสงมาจากไหนวะ": { icon: "✨", clinical: ["Visual aura", "Photopsia", "Visual disturbance"] },
-      "ตาเบลอ": { icon: "👁️", clinical: ["Visual disturbance", "Aura", "Cognitive visual symptom"] },
-      "โลกแปลกๆ": { icon: "🫥", clinical: ["Derealization", "Cognitive symptom"] },
-      "คอตึง": { icon: "🪢", clinical: ["Neck stiffness", "Neck tension"] },
-      "เพลีย": { icon: "🪫", clinical: ["Fatigue", "Postdrome fatigue"] },
-      "ทำเหี้ยอะไรไม่ได้": { icon: "🛌", clinical: ["Severe fatigue", "Brain fog", "Functional impairment"] }
+    const MED_SCHEDULE = [
+      { group: "MORNING", due: "09:00", meds: [
+        ["fluoxetine40", "Fluoxetine 40 mg", "20 mg x 2 tablets"],
+        ["methylphenidate20_morning", "Methylphenidate 20 mg", "10 mg x 2 tablets"],
+        ["propranolol10_morning", "Propranolol 10 mg", ""],
+        ["naproxen250_morning", "Naproxen 250 mg", ""],
+        ["nurtec75", "Nurtec ODT (Rimegepant) 75 mg", "every other day schedule"]
+      ]},
+      { group: "MIDDAY", due: "13:00", meds: [["methylphenidate20_midday", "Methylphenidate 20 mg", ""]] },
+      { group: "EVENING", due: "18:00", meds: [
+        ["methylphenidate20_evening", "Methylphenidate 20 mg", ""],
+        ["naproxen250_evening", "Naproxen 250 mg", ""]
+      ]},
+      { group: "BEDTIME", due: "22:00", meds: [
+        ["pregabalin75", "Pregabalin 75 mg", ""],
+        ["amitriptyline25", "Amitriptyline 25 mg", ""],
+        ["flunarizine5", "Flunarizine 5 mg", ""],
+        ["propranolol10_bedtime", "Propranolol 10 mg", ""]
+      ]}
+    ];
+
+    const PRODROME = ["หาวบ่อย", "ง่วงผิดปกติ", "หงุดหงิด", "สมองช้า", "คิดไม่ออก", "ตาล้า", "คอแข็ง", "อยากกินของหวาน", "อยากกินเค็ม", "เวียนหัว"];
+    const SIDES = ["ซ้าย", "ขวา", "ทั้งสองข้าง"];
+    const ATTACK_SYMPTOMS = [
+      ["aura", "aura"],
+      ["flashingLights", "แสงแวบ"],
+      ["blurryVision", "ตาเบลอ"],
+      ["nausea", "คลื่นไส้"]
+    ];
+    const WAKE_HEADACHE = ["ไม่ปวด", "ปวดนิดหน่อย", "ปวดปานกลาง", "ปวดมาก"];
+    const CLINICAL = {
+      "หาวบ่อย": "frequent yawning / prodrome",
+      "ง่วงผิดปกติ": "abnormal somnolence / prodrome",
+      "หงุดหงิด": "irritability / mood change",
+      "สมองช้า": "cognitive slowing",
+      "คิดไม่ออก": "brain fog / impaired concentration",
+      "ตาล้า": "visual fatigue",
+      "คอแข็ง": "neck stiffness",
+      "เวียนหัว": "dizziness",
+      "แสงแวบ": "visual aura with photopsia",
+      "ตาเบลอ": "visual disturbance / blurred vision",
+      "ท้ายทอยตึง": "occipital discomfort"
     };
 
-    const LOCATIONS = {
-      "ท้ายทอย": ["Occipital region", "Back of head"],
-      "หลังตา": ["Retro-orbital pain"],
-      "ข้างเดียว": ["Unilateral headache"],
-      "ทั้งหัว": ["Holocranial headache"],
-      "คอ": ["Neck/base involvement"]
-    };
-
-    const MEDS = ["none", "paracetamol", "ibuprofen", "triptan", "antiemetic"];
-
-    let events = loadEvents();
+    let events = read(EVENT_KEY, []);
+    let medLogs = read(MED_KEY, []);
+    let sleepLogs = read(SLEEP_KEY, []);
+    let calEvents = read(CAL_KEY, []);
     let selectedProdrome = new Set();
-    let selectedLocation = "ท้ายทอย";
-    let selectedMedication = null;
-    let selectedMorning = new Set();
+    let selectedSide = "ทั้งสองข้าง";
+    let selectedSeverity = 7;
+    let selectedAttackSymptoms = new Set();
+    let selectedImprovePain = 2;
+    let selectedWakeHeadache = "ไม่ปวด";
 
-    function loadEvents() {
-      try { return JSON.parse(localStorage.getItem(STORE_KEY) || "[]"); }
-      catch { return []; }
+    function read(key, fallback) {
+      try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); }
+      catch { return fallback; }
     }
-
-    function saveEvents() {
-      localStorage.setItem(STORE_KEY, JSON.stringify(events));
-    }
-
-    function uid() {
-      return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-    }
-
-    function nowIso() {
-      return new Date().toISOString();
-    }
-
-    function localDateKey(iso) {
+    function write(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+    function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+    function nowIso() { return new Date().toISOString(); }
+    function todayKey() { return dateKey(nowIso()); }
+    function dateKey(iso) {
       const d = new Date(iso);
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
-      return `${y}-${m}-${day}`;
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
     }
-
-    function todayKey() {
-      return localDateKey(new Date().toISOString());
+    function timeText(iso) { return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }
+    function dateText(isoOrDate) { return new Date(isoOrDate).toLocaleDateString([], { month: "short", day: "numeric" }); }
+    function esc(v) { return String(v ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[c]); }
+    function minsBetween(a, b) { return Math.round((new Date(b) - new Date(a)) / 60000); }
+    function fmtMins(mins) {
+      if (mins == null || Number.isNaN(mins)) return "-";
+      if (mins < 60) return `${mins}m`;
+      return `${Math.floor(mins/60)}h ${mins % 60 ? mins % 60 + "m" : ""}`.trim();
     }
-
-    function timeLabel(iso) {
-      return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    function dueDateTime(date, time) { return new Date(`${date}T${time}:00`); }
+    function medName(id) {
+      for (const group of MED_SCHEDULE) for (const med of group.meds) if (med[0] === id) return med[1];
+      return id;
     }
-
-    function dateLabel(iso) {
-      return new Date(iso).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
-    }
-
-    function escapeHtml(value) {
-      return String(value ?? "").replace(/[&<>"']/g, char => ({
-        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-      })[char]);
-    }
-
     function addEvent(event) {
-      events.unshift({ id: uid(), occurredAt: nowIso(), ...event });
-      saveEvents();
+      events.unshift({ id: uid(), at: nowIso(), ...event });
+      write(EVENT_KEY, events);
       render();
     }
-
-    function sortedEvents() {
-      return [...events].sort((a, b) => new Date(b.occurredAt) - new Date(a.occurredAt));
+    function sorted(list, field = "at") { return [...list].sort((a, b) => new Date(b[field]) - new Date(a[field])); }
+    function todayMedLogs() { return medLogs.filter(l => l.date === todayKey()); }
+    function medTakenToday(id) { return todayMedLogs().filter(l => l.medId === id); }
+    function medStatus(id, group) {
+      const taken = medTakenToday(id).length > 0;
+      const missed = !taken && new Date() > new Date(dueDateTime(todayKey(), group.due).getTime() + 2 * 60 * 60000);
+      return taken ? "taken" : missed ? "missed" : "";
     }
-
     function activeAttack() {
-      const ordered = [...events].sort((a, b) => new Date(a.occurredAt) - new Date(b.occurredAt));
+      const chron = [...events].sort((a, b) => new Date(a.at) - new Date(b.at));
       let active = null;
-      for (const event of ordered) {
-        if (event.type === "attack_start") active = event;
-        if (event.type === "attack_resolved") active = null;
+      for (const e of chron) {
+        if (e.type === "attack_start") active = e;
+        if (e.type === "improved") active = null;
       }
       return active;
     }
-
-    function renderChipGrid(container, items, selected, options = {}) {
-      container.innerHTML = items.map(item => {
-        const label = typeof item === "string" ? item : item.label;
-        const sub = typeof item === "string" ? "" : item.sub;
-        const icon = TERMS[label]?.icon || "";
-        const active = selected instanceof Set ? selected.has(label) : selected === label;
-        return `<button class="chip ${options.hot ? "hot" : ""} ${active ? "on" : ""}" data-value="${escapeHtml(label)}">${icon} ${escapeHtml(label)}${sub ? `<small>${escapeHtml(sub)}</small>` : ""}</button>`;
-      }).join("");
+    function lastBefore(type, iso) {
+      return events
+        .filter(e => e.type === type && new Date(e.at) <= new Date(iso))
+        .sort((a, b) => new Date(b.at) - new Date(a.at))[0] || null;
+    }
+    function latestMedBefore(iso) {
+      return medLogs
+        .filter(m => new Date(m.at) <= new Date(iso))
+        .sort((a, b) => new Date(b.at) - new Date(a.at))[0] || null;
     }
 
+    function showScreen(id) {
+      document.querySelectorAll(".screen").forEach(s => s.classList.remove("on"));
+      document.querySelectorAll(".navbtn").forEach(b => b.classList.remove("on"));
+      document.getElementById(id).classList.add("on");
+      document.querySelectorAll(`[data-screen="${id}"]`).forEach(b => b.classList.add("on"));
+      document.querySelector("main").scrollTop = 0;
+    }
     function openSheet(id) {
+      primeSheet(id);
       document.getElementById(id).classList.add("on");
     }
-
-    function closeSheets() {
-      document.querySelectorAll(".sheet-wrap").forEach(sheet => sheet.classList.remove("on"));
-    }
-
-    function toast(message) {
+    function closeSheets() { document.querySelectorAll(".sheetwrap").forEach(s => s.classList.remove("on")); }
+    function toast(msg) {
       const el = document.getElementById("toast");
-      el.textContent = message;
+      el.textContent = msg;
       el.classList.add("on");
-      setTimeout(() => el.classList.remove("on"), 1700);
+      setTimeout(() => el.classList.remove("on"), 1500);
     }
 
-    function eventTitle(event) {
-      if (event.type === "prodrome") return "🌫️ Something Feels Off";
-      if (event.type === "attack_start") return "🤕 Migraine Attack";
-      if (event.type === "attack_resolved") return "😮‍💨 Resolved";
-      if (event.type === "medication") return "💊 Medication";
-      if (event.type === "morning_checkin") return "☀️ Morning Check-In";
-      return "Event";
+    function chipHtml(values, selected, mode = "set") {
+      return values.map(v => {
+        const key = Array.isArray(v) ? v[0] : v;
+        const label = Array.isArray(v) ? v[1] : v;
+        const on = mode === "set" ? selected.has(key) : selected === key;
+        return `<button class="chip ${on ? "on" : ""}" data-value="${esc(key)}">${esc(label)}</button>`;
+      }).join("");
+    }
+    function numbersHtml(selected) {
+      return Array.from({ length: 11 }, (_, i) => `<button class="chip ${selected === i ? "on" : ""}" data-value="${i}">${i}</button>`).join("");
     }
 
-    function eventDetails(event) {
-      if (event.type === "prodrome") return pillList(event.userLabels || []);
-      if (event.type === "attack_start") {
-        const items = [`Intensity ${event.intensity}/10`, event.location].concat(event.medication && event.medication !== "none" ? [`Med: ${event.medication}`] : []);
-        return pillList(items);
+    function primeSheet(id) {
+      if (id === "prodromeSheet") {
+        selectedProdrome = new Set();
+        document.getElementById("prodromeChips").innerHTML = chipHtml(PRODROME, selectedProdrome);
       }
-      if (event.type === "attack_resolved") return `<div class="muted">Attack marked as ended.</div>`;
-      if (event.type === "morning_checkin") return pillList([`sleep: ${event.sleep}`, `mood: ${event.mood}`].concat(event.userLabels || []));
-      return "";
-    }
-
-    function pillList(items) {
-      return `<div class="pill-row">${items.map(item => `<span class="pill">${escapeHtml(item)}</span>`).join("")}</div>`;
-    }
-
-    function renderTimeline(container, list) {
-      if (!list.length) {
-        container.innerHTML = `<div class="empty">Nothing logged yet. One tap is enough to start.</div>`;
-        return;
+      if (id === "attackSheet") {
+        selectedSide = "ทั้งสองข้าง"; selectedSeverity = 7; selectedAttackSymptoms = new Set();
+        document.getElementById("sideChips").innerHTML = chipHtml(SIDES, selectedSide, "one");
+        document.getElementById("severityChips").innerHTML = numbersHtml(selectedSeverity);
+        document.getElementById("attackSymptomChips").innerHTML = chipHtml(ATTACK_SYMPTOMS, selectedAttackSymptoms);
       }
-      container.innerHTML = `<div class="timeline">${list.map(event => `
-        <div class="event ${escapeHtml(event.type)}">
-          <div class="time">${timeLabel(event.occurredAt)}</div>
-          <div class="event-card">
-            <div class="event-title">${eventTitle(event)}</div>
-            ${eventDetails(event)}
-            <div class="meta">${dateLabel(event.occurredAt)}</div>
-          </div>
-        </div>`).join("")}</div>`;
-    }
-
-    function getEpisodes() {
-      const chronological = [...events].sort((a, b) => new Date(a.occurredAt) - new Date(b.occurredAt));
-      const episodes = [];
-      let current = null;
-      for (const event of chronological) {
-        if (event.type === "prodrome" && !current) current = { events: [], startedAt: event.occurredAt };
-        if (event.type === "attack_start" && !current) current = { events: [], startedAt: event.occurredAt };
-        if (current) current.events.push(event);
-        if (current && event.type === "attack_resolved") {
-          episodes.push(current);
-          current = null;
-        }
+      if (id === "improveSheet") {
+        selectedImprovePain = 2;
+        document.getElementById("improvePainChips").innerHTML = numbersHtml(selectedImprovePain);
       }
-      if (current) episodes.push(current);
-      return episodes;
-    }
-
-    function detectPattern(episode) {
-      const labels = episode.events.flatMap(event => event.userLabels || []);
-      const hasMood = labels.includes("นอย") || labels.includes("หาเรื่องนอย");
-      const hasHeart = labels.includes("ใจเต้นเร็ว");
-      const hasVisual = labels.includes("แสงมาจากไหนวะ") || labels.includes("ตาเบลอ");
-      const hasAttack = episode.events.some(event => event.type === "attack_start");
-      const hasCrash = labels.includes("เพลีย") || labels.includes("ทำเหี้ยอะไรไม่ได้");
-      const score = [hasMood, hasHeart, hasVisual, hasAttack, hasCrash].filter(Boolean).length;
-      return { hasMood, hasHeart, hasVisual, hasAttack, hasCrash, score };
-    }
-
-    function renderPatterns() {
-      const el = document.getElementById("patternsContent");
-      const episodes = getEpisodes().filter(ep => ep.events.some(event => event.type === "attack_start"));
-      if (!episodes.length) {
-        el.innerHTML = `<div class="empty">Patterns will appear after a few prodrome and attack logs.</div>`;
-        return;
+      if (id === "sleepSheet") {
+        selectedWakeHeadache = "ไม่ปวด";
+        document.getElementById("wakeHeadacheChips").innerHTML = chipHtml(WAKE_HEADACHE, selectedWakeHeadache, "one");
+        const existing = sleepLogs.find(s => s.date === todayKey());
+        document.getElementById("bedtime").value = existing?.bedtime || "";
+        document.getElementById("waketime").value = existing?.wakeTime || "";
+        document.getElementById("napMin").value = existing?.napMinutes ?? "";
       }
-      const matched = episodes.map(detectPattern).filter(p => p.score >= 3).length;
-      const prodromeCounts = {};
-      for (const event of events) {
-        for (const label of event.userLabels || []) prodromeCounts[label] = (prodromeCounts[label] || 0) + 1;
+      if (id === "doctorEventSheet") {
+        document.getElementById("apptDate").value = todayKey();
+        document.getElementById("apptTime").value = "";
+        document.getElementById("apptPlace").value = "";
+        document.getElementById("doctorName").value = "";
+        document.getElementById("apptNote").value = "";
       }
-      const topLabels = Object.entries(prodromeCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
-      el.innerHTML = `
-        <div class="band pattern">
-          <div><strong>${matched}/${episodes.length}</strong> attack episodes match part of your sequence.</div>
-          <div class="meta">นอย → ใจเต้นเร็ว → visual disturbance → migraine → exhaustion</div>
-        </div>
-        <div class="label">Most logged signals</div>
-        <div class="band">${topLabels.length ? topLabels.map(([label, count]) => `<div class="row between" style="margin-bottom:9px"><span>${TERMS[label]?.icon || ""} ${escapeHtml(label)}</span><strong>${count}</strong></div>`).join("") : "No signals yet."}</div>
-        <div class="label">Recent episodes</div>
-        ${episodes.slice(-5).reverse().map(ep => {
-          const pattern = detectPattern(ep);
-          return `<div class="band">
-            <div class="row between"><strong>${dateLabel(ep.startedAt)}</strong><span class="muted">${pattern.score}/5 signals</span></div>
-            <div class="meta">${ep.events.map(eventTitle).join(" → ")}</div>
-          </div>`;
-        }).join("")}
-      `;
-    }
-
-    function clinicalFor(label) {
-      return TERMS[label]?.clinical || LOCATIONS[label] || [label];
-    }
-
-    function renderReport() {
-      const el = document.getElementById("doctorReport");
-      if (!events.length) {
-        el.textContent = "No data recorded yet.";
-        return;
+      if (id === "refillEventSheet") {
+        document.getElementById("orderDate").value = todayKey();
+        document.getElementById("refillDueDate").value = "";
+        document.getElementById("refillNote").value = "";
       }
-      const attacks = events.filter(event => event.type === "attack_start");
-      const prodromes = events.filter(event => event.type === "prodrome");
-      const episodes = getEpisodes().filter(ep => ep.events.some(event => event.type === "attack_start"));
-      const lines = [];
-      lines.push(`Migraine Pattern Report`);
-      lines.push(`Generated: ${new Date().toLocaleString()}`);
-      lines.push(`Recorded events: ${events.length}`);
-      lines.push(`Migraine attacks: ${attacks.length}`);
-      lines.push(`Prodrome/off-feeling logs: ${prodromes.length}`);
-      lines.push("");
-      lines.push("Clinical translation dictionary:");
-      Object.keys(TERMS).forEach(label => lines.push(`- "${label}" -> ${clinicalFor(label).join(" / ")}`));
-      lines.push("");
-      lines.push("Recent timeline:");
-      sortedEvents().slice(0, 20).reverse().forEach(event => {
-        const labels = event.userLabels || [];
-        const clinical = labels.flatMap(clinicalFor);
-        const extras = event.type === "attack_start" ? [`Intensity ${event.intensity}/10`, `Location ${event.location} (${clinicalFor(event.location).join(" / ")})`] : [];
-        lines.push(`${dateLabel(event.occurredAt)} ${timeLabel(event.occurredAt)} - ${eventTitle(event).replace(/[^\w\s:/().-]/g, "").trim()}`);
-        [...labels.map(label => `"${label}"`), ...extras].forEach(item => lines.push(`  - ${item}`));
-        if (clinical.length) lines.push(`  Clinical: ${[...new Set(clinical)].join(" / ")}`);
-      });
-      lines.push("");
-      lines.push("Episode pattern notes:");
-      episodes.slice(-6).forEach(ep => {
-        const p = detectPattern(ep);
-        lines.push(`- ${dateLabel(ep.startedAt)}: ${p.score}/5 sequence signals observed.`);
-      });
-      el.textContent = lines.join("\n");
     }
 
-    function renderActiveEpisode() {
-      const el = document.getElementById("activeEpisode");
-      const active = activeAttack();
-      if (!active) {
-        el.innerHTML = "";
-        return;
-      }
-      el.innerHTML = `<div class="band pattern"><div class="row between"><strong>Active migraine</strong><span>${timeLabel(active.occurredAt)}</span></div><div class="meta">Intensity ${active.intensity}/10, ${escapeHtml(active.location)}. Tap Resolved when it ends.</div></div>`;
-    }
-
-    function renderTodayMeta() {
-      document.getElementById("todayDate").textContent = new Date().toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
-      const days = new Set(events.map(event => localDateKey(event.occurredAt)));
-      document.getElementById("streakBox").innerHTML = days.size ? `${days.size}<span>logged days</span>` : "";
-    }
-
-    function render() {
-      renderTodayMeta();
-      renderActiveEpisode();
-      const todayEvents = sortedEvents().filter(event => localDateKey(event.occurredAt) === todayKey());
-      renderTimeline(document.getElementById("todayTimeline"), todayEvents);
-      renderTimeline(document.getElementById("allTimeline"), sortedEvents());
-      renderPatterns();
-      renderReport();
-      document.getElementById("resolveBtn").disabled = !activeAttack();
-      document.getElementById("resolveBtn").style.opacity = activeAttack() ? "1" : ".55";
-    }
-
-    function setup() {
-      renderChipGrid(document.getElementById("prodromeChips"), Object.keys(TERMS), selectedProdrome);
-      renderChipGrid(document.getElementById("locationChips"), Object.keys(LOCATIONS), selectedLocation, { hot: true });
-      renderChipGrid(document.getElementById("medChips"), MEDS, new Set(), { hot: true });
-      renderChipGrid(document.getElementById("morningChips"), ["คอตึง", "เพลีย", "ตาเบลอ", "นอย"], selectedMorning);
-
-      document.querySelectorAll("[data-screen]").forEach(btn => btn.addEventListener("click", () => {
-        document.querySelectorAll(".screen").forEach(screen => screen.classList.remove("on"));
-        document.querySelectorAll(".nav-btn").forEach(nav => nav.classList.remove("on"));
-        document.getElementById(btn.dataset.screen).classList.add("on");
-        btn.classList.add("on");
-      }));
-
-      document.querySelectorAll("[data-open]").forEach(btn => btn.addEventListener("click", () => {
-        if (btn.dataset.open === "prodrome") {
-          selectedProdrome = new Set();
-          renderChipGrid(document.getElementById("prodromeChips"), Object.keys(TERMS), selectedProdrome);
-          openSheet("prodromeSheet");
-        }
-        if (btn.dataset.open === "attack") openSheet("attackSheet");
-        if (btn.dataset.open === "morning") {
-          selectedMorning = new Set();
-          renderChipGrid(document.getElementById("morningChips"), ["คอตึง", "เพลีย", "ตาเบลอ", "นอย"], selectedMorning);
-          openSheet("morningSheet");
-        }
-      }));
-
-      document.querySelectorAll("[data-close], .sheet-wrap").forEach(el => el.addEventListener("click", event => {
-        if (event.target === el || event.target.hasAttribute("data-close")) closeSheets();
-      }));
-
-      document.getElementById("prodromeChips").addEventListener("click", event => {
-        const btn = event.target.closest(".chip");
-        if (!btn) return;
-        const value = btn.dataset.value;
-        selectedProdrome.has(value) ? selectedProdrome.delete(value) : selectedProdrome.add(value);
-        renderChipGrid(document.getElementById("prodromeChips"), Object.keys(TERMS), selectedProdrome);
-      });
-
-      document.getElementById("locationChips").addEventListener("click", event => {
-        const btn = event.target.closest(".chip");
-        if (!btn) return;
-        selectedLocation = btn.dataset.value;
-        renderChipGrid(document.getElementById("locationChips"), Object.keys(LOCATIONS), selectedLocation, { hot: true });
-      });
-
-      document.getElementById("medChips").addEventListener("click", event => {
-        const btn = event.target.closest(".chip");
-        if (!btn) return;
-        selectedMedication = btn.dataset.value;
-        renderChipGrid(document.getElementById("medChips"), MEDS, selectedMedication, { hot: true });
-      });
-
-      document.getElementById("morningChips").addEventListener("click", event => {
-        const btn = event.target.closest(".chip");
-        if (!btn) return;
-        const value = btn.dataset.value;
-        selectedMorning.has(value) ? selectedMorning.delete(value) : selectedMorning.add(value);
-        renderChipGrid(document.getElementById("morningChips"), ["คอตึง", "เพลีย", "ตาเบลอ", "นอย"], selectedMorning);
-      });
-
-      document.querySelectorAll(".seg").forEach(seg => seg.addEventListener("click", event => {
-        const btn = event.target.closest("button");
-        if (!btn) return;
-        seg.querySelectorAll("button").forEach(item => item.classList.remove("on"));
-        btn.classList.add("on");
-      }));
-
-      document.getElementById("attackIntensity").addEventListener("input", event => {
-        document.getElementById("attackIntensityValue").textContent = event.target.value;
-      });
-
-      document.getElementById("saveProdrome").addEventListener("click", () => {
-        if (!selectedProdrome.size) return toast("Pick at least one signal");
-        addEvent({ type: "prodrome", userLabels: [...selectedProdrome], clinicalLabels: [...selectedProdrome].flatMap(clinicalFor) });
-        closeSheets();
-        toast("Logged");
-      });
-
-      document.getElementById("saveAttack").addEventListener("click", () => {
-        const intensity = Number(document.getElementById("attackIntensity").value);
-        addEvent({ type: "attack_start", intensity, location: selectedLocation, medication: selectedMedication });
-        closeSheets();
-        toast("Attack logged");
-      });
-
-      document.getElementById("resolveBtn").addEventListener("click", () => {
-        if (!activeAttack()) return toast("No active attack");
-        addEvent({ type: "attack_resolved" });
-        toast("Resolved");
-      });
-
-      document.getElementById("saveMorning").addEventListener("click", () => {
-        const sleep = document.querySelector("#sleepSeg .on").dataset.value;
-        const mood = document.querySelector("#moodSeg .on").dataset.value;
-        addEvent({ type: "morning_checkin", sleep, mood, userLabels: [...selectedMorning] });
-        closeSheets();
-        toast("Check-in saved");
-      });
-
+    function logMedication(id, group) {
+      const already = medTakenToday(id).length;
+      if (already && !confirm(`${medName(id)} บันทึกไปแล้ววันนี้\nต้องการบันทึกซ้ำจริงไหม?`)) return;
+      const entry = { id: uid(), medId: id, medName: medName(id), group: group.group, due: group.due, at: nowIso(), date: todayKey(), override: already > 0 };
+      medLogs.unshift(entry);
+      write(MED_KEY, medLogs);
+      events.unshift({ id: uid(), type: "medication", at: entry.at, medId: id, medName: entry.medName, group: group.group });
+      write(EVENT_KEY, events);
+      toast("บันทึกยาแล้ว");
       render();
     }
 
+    function medPlanCount() { return MED_SCHEDULE.reduce((sum, g) => sum + g.meds.length, 0); }
+    function renderMeds() {
+      const takenCount = new Set(todayMedLogs().map(l => l.medId)).size;
+      const total = medPlanCount();
+      const missed = [];
+      for (const group of MED_SCHEDULE) for (const med of group.meds) if (medStatus(med[0], group) === "missed") missed.push(med[1]);
+      document.getElementById("adherenceMini").innerHTML = `${takenCount}/${total}<br>ยา`;
+      document.getElementById("medSummary").innerHTML = `
+        <div class="band ${missed.length ? "danger" : "ok"}">
+          <div class="row between"><strong>วันนี้กินแล้ว ${takenCount}/${total}</strong><span>${Math.round(takenCount / total * 100)}%</span></div>
+          ${missed.length ? `<div class="mini" style="margin-top:8px">ยังไม่เห็นบันทึก: ${missed.map(esc).join(", ")}</div>` : `<div class="mini" style="margin-top:8px">ยังไม่มีรายการที่เลยเวลา</div>`}
+        </div>`;
+      document.getElementById("medButtons").innerHTML = MED_SCHEDULE.map(group => `
+        <div class="medgroup">
+          <div class="medtitle">${group.group} <span class="mini">${group.due}</span></div>
+          <div class="medgrid">${group.meds.map(med => {
+            const status = medStatus(med[0], group);
+            const logs = medTakenToday(med[0]);
+            return `<button class="medbtn ${status}" data-med="${esc(med[0])}">
+              <b>${status === "taken" ? "✓ " : status === "missed" ? "ยังไม่ได้ " : ""}${esc(med[1])}</b>
+              <span>${esc(med[2] || (logs[0] ? "กินแล้ว " + timeText(logs[0].at) : "แตะเพื่อบันทึก"))}</span>
+            </button>`;
+          }).join("")}</div>
+        </div>`).join("");
+      document.querySelectorAll("[data-med]").forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.dataset.med;
+          const group = MED_SCHEDULE.find(g => g.meds.some(m => m[0] === id));
+          logMedication(id, group);
+        };
+      });
+      const today = sorted(todayMedLogs());
+      document.getElementById("medHistory").innerHTML = today.length ? timeline(today.map(m => ({ type: "medication", at: m.at, title: `💊 ${m.medName}`, details: `${m.group}${m.override ? " · override" : ""}` }))) : `<div class="empty">ยังไม่ได้บันทึกยา today</div>`;
+    }
+
+    function renderTimeline(target, list) {
+      document.getElementById(target).innerHTML = list.length ? timeline(list.map(normalizeEvent)) : `<div class="empty">ยังไม่มีข้อมูล</div>`;
+    }
+    function normalizeEvent(e) {
+      if (e.title) return e;
+      if (e.type === "prodrome") return { type: e.type, at: e.at, title: "⚡ เริ่มรู้สึกแปลก", details: (e.symptoms || []).join(", ") };
+      if (e.type === "attack_start") return { type: e.type, at: e.at, title: "💥 เริ่มปวดหัว", details: `${e.side} · ${e.severity}/10${symptomText(e)}` };
+      if (e.type === "improved") return { type: e.type, at: e.at, title: "😌 ดีขึ้นแล้ว", details: `เหลือ ${e.painAfter}/10 · duration ${fmtMins(e.attackDurationMin)} · med→ดีขึ้น ${fmtMins(e.medToImprovementMin)}` };
+      if (e.type === "medication") return { type: e.type, at: e.at, title: `💊 ${e.medName}`, details: e.group || "" };
+      if (e.type === "sleep") return { type: e.type, at: e.at, title: "🌅 Sleep", details: `ตื่นมา: ${e.wakeHeadache} · sleep ${fmtMins(e.totalSleepMin)}` };
+      return { type: e.type, at: e.at, title: "event", details: "" };
+    }
+    function timeline(items) {
+      return `<div class="timeline">${items.map(e => `
+        <div class="event ${esc(e.type)}">
+          <div class="time">${timeText(e.at)}</div>
+          <div class="eventcard"><div class="etitle">${esc(e.title)}</div>${e.details ? `<div class="mini">${esc(e.details)}</div>` : ""}<div class="mini">${dateText(e.at)}</div></div>
+        </div>`).join("")}</div>`;
+    }
+    function symptomText(e) {
+      const arr = [];
+      if (e.aura) arr.push("aura");
+      if (e.flashingLights) arr.push("แสงแวบ");
+      if (e.blurryVision) arr.push("ตาเบลอ");
+      if (e.nausea) arr.push("คลื่นไส้");
+      return arr.length ? " · " + arr.join(", ") : "";
+    }
+
+    function renderReminders() {
+      const soon = upcomingCalendar().filter(e => e.days <= 7);
+      const missed = [];
+      for (const group of MED_SCHEDULE) for (const med of group.meds) if (medStatus(med[0], group) === "missed") missed.push(med[1]);
+      const parts = [];
+      if (missed.length) parts.push(`<div class="band danger"><strong>ยาเลยเวลา</strong><div class="mini">${missed.map(esc).join(", ")}</div></div>`);
+      if (soon.length) parts.push(`<div class="band warn"><strong>ใกล้ถึงนัด / refill</strong><div class="mini">${soon.map(e => esc(e.label)).join("<br>")}</div></div>`);
+      document.getElementById("reminders").innerHTML = parts.join("");
+      document.getElementById("calendarReminders").innerHTML = soon.length ? soon.map(e => `<div class="band ${e.days <= 1 ? "danger" : "warn"}"><strong>${esc(e.label)}</strong><div class="mini">${e.days} วัน</div></div>`).join("") : `<div class="empty">ยังไม่มีรายการใน 7 วัน</div>`;
+    }
+    function upcomingCalendar() {
+      const start = new Date(todayKey() + "T00:00:00");
+      return calEvents.map(e => {
+        const date = e.type === "refill" ? e.refillDueDate : e.date;
+        const d = new Date(date + "T00:00:00");
+        const days = Math.ceil((d - start) / 86400000);
+        const label = e.type === "appointment" ? `นัดหมอ ${date} ${e.time || ""} ${e.place || ""}` : `สั่งยา/รับยา ${date}`;
+        return { ...e, date, days, label };
+      }).filter(e => e.days >= 0).sort((a, b) => a.days - b.days);
+    }
+    function renderCalendar() {
+      const upcoming = upcomingCalendar();
+      document.getElementById("calendarList").innerHTML = upcoming.length ? upcoming.map(e => `
+        <div class="band ${e.days <= 7 ? "warn" : ""}">
+          <div class="row between"><strong>${e.type === "appointment" ? "นัดหมอ" : "สั่งยา / รับยา"}</strong><span>${esc(e.date)}</span></div>
+          <div class="mini">${esc(e.type === "appointment" ? `${e.time || ""} ${e.place || ""} ${e.doctor || ""}` : `order ${e.orderDate || "-"} · due ${e.refillDueDate || "-"}`)}</div>
+          ${e.note ? `<div class="mini">${esc(e.note)}</div>` : ""}
+        </div>`).join("") : `<div class="empty">ยังไม่มี calendar event</div>`;
+    }
+
+    function sleepDuration(bed, wake) {
+      if (!bed || !wake) return null;
+      const [bh, bm] = bed.split(":").map(Number);
+      const [wh, wm] = wake.split(":").map(Number);
+      let mins = (wh * 60 + wm) - (bh * 60 + bm);
+      if (mins < 0) mins += 1440;
+      return mins;
+    }
+
+    function renderReport() {
+      const attacks = events.filter(e => e.type === "attack_start");
+      const improved = events.filter(e => e.type === "improved");
+      const avgSeverity = attacks.length ? (attacks.reduce((s, a) => s + a.severity, 0) / attacks.length).toFixed(1) : "-";
+      const avgDur = improved.length ? fmtMins(Math.round(improved.reduce((s, e) => s + (e.attackDurationMin || 0), 0) / improved.length)) : "-";
+      const nurtec = medLogs.filter(m => m.medId === "nurtec75").length;
+      const avgSleep = sleepLogs.length ? fmtMins(Math.round(sleepLogs.reduce((s, l) => s + (l.totalSleepMin || 0), 0) / sleepLogs.length)) : "-";
+      const wakeHeadache = sleepLogs.filter(s => s.wakeHeadache && s.wakeHeadache !== "ไม่ปวด").length;
+      const light = attacks.filter(a => a.flashingLights || a.aura).length;
+      const prodromeCounts = {};
+      events.filter(e => e.type === "prodrome").forEach(e => (e.symptoms || []).forEach(s => prodromeCounts[s] = (prodromeCounts[s] || 0) + 1));
+      const topTriggers = Object.entries(prodromeCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, v]) => `${k} (${CLINICAL[k] || "prodrome"}): ${v}`).join("\n") || "-";
+      const calendarLines = upcomingCalendar().slice(0, 8).map(e => `- ${e.label}${e.note ? " · " + e.note : ""}`).join("\n") || "-";
+      const lines = [
+        "Neurologist Migraine Report",
+        `Generated: ${new Date().toLocaleString()}`,
+        "",
+        `Migraine frequency: ${attacks.length} attacks recorded`,
+        `Average severity: ${avgSeverity}/10`,
+        `Average attack duration: ${avgDur}`,
+        `Medication usage logs: ${medLogs.length}`,
+        `Nurtec usage: ${nurtec} doses`,
+        `Average sleep duration: ${avgSleep}`,
+        `Wake-up headache frequency: ${wakeHeadache}/${sleepLogs.length || 0} mornings`,
+        "",
+        "Suspected triggers / prodrome signals:",
+        topTriggers,
+        "",
+        `Light exposure / visual aura correlation: ${light}/${attacks.length || 0} attacks included aura/flashing lights`,
+        "Heat exposure correlation: not directly logged yet",
+        "Noise exposure correlation: not directly logged yet",
+        "",
+        "Medication timing correlation:",
+        improved.slice(0, 10).map(e => `- ${dateText(e.at)} ${timeText(e.at)}: medication to improvement ${fmtMins(e.medToImprovementMin)}; attack duration ${fmtMins(e.attackDurationMin)}`).join("\n") || "-",
+        "",
+        "Clinical translation examples:",
+        `"ตาลาย มีแสงแวบ" -> visual aura with photopsia`,
+        `"ท้ายทอยตึง" -> occipital discomfort`,
+        `"ตาเบลอ" -> visual disturbance / blurred vision`,
+        "",
+        "Appointment/refill timeline:",
+        calendarLines
+      ];
+      document.getElementById("doctorReport").textContent = lines.join("\n");
+    }
+
+    function render() {
+      document.getElementById("todayDate").textContent = new Date().toLocaleDateString("th-TH", { weekday: "long", month: "long", day: "numeric" });
+      renderMeds();
+      renderReminders();
+      renderCalendar();
+      const todayEvents = sorted(events).filter(e => dateKey(e.at) === todayKey());
+      renderTimeline("todayTimeline", todayEvents);
+      renderTimeline("allTimeline", sorted(events));
+      renderReport();
+      document.getElementById("improveQuick").style.opacity = activeAttack() ? "1" : ".55";
+    }
+
+    function setup() {
+      document.querySelectorAll("[data-screen]").forEach(btn => btn.addEventListener("click", () => showScreen(btn.dataset.screen)));
+      document.querySelectorAll("[data-open]").forEach(btn => btn.addEventListener("click", () => openSheet(btn.dataset.open + "Sheet")));
+      document.querySelectorAll("[data-close], .sheetwrap").forEach(el => el.addEventListener("click", e => { if (e.target === el || e.target.hasAttribute("data-close")) closeSheets(); }));
+      document.getElementById("improveQuick").onclick = () => activeAttack() ? openSheet("improveSheet") : toast("ยังไม่มี attack ที่ active");
+
+      document.getElementById("prodromeChips").onclick = e => {
+        const b = e.target.closest(".chip"); if (!b) return;
+        const v = b.dataset.value; selectedProdrome.has(v) ? selectedProdrome.delete(v) : selectedProdrome.add(v);
+        b.classList.toggle("on");
+      };
+      document.getElementById("saveProdrome").onclick = () => {
+        if (!selectedProdrome.size) return toast("เลือกอย่างน้อย 1 อย่าง");
+        addEvent({ type: "prodrome", symptoms: [...selectedProdrome] });
+        closeSheets(); toast("บันทึกแล้ว");
+      };
+
+      document.getElementById("sideChips").onclick = e => {
+        const b = e.target.closest(".chip"); if (!b) return;
+        selectedSide = b.dataset.value;
+        document.getElementById("sideChips").innerHTML = chipHtml(SIDES, selectedSide, "one");
+      };
+      document.getElementById("severityChips").onclick = e => {
+        const b = e.target.closest(".chip"); if (!b) return;
+        selectedSeverity = Number(b.dataset.value);
+        document.getElementById("severityChips").innerHTML = numbersHtml(selectedSeverity);
+      };
+      document.getElementById("attackSymptomChips").onclick = e => {
+        const b = e.target.closest(".chip"); if (!b) return;
+        const v = b.dataset.value; selectedAttackSymptoms.has(v) ? selectedAttackSymptoms.delete(v) : selectedAttackSymptoms.add(v);
+        b.classList.toggle("on");
+      };
+      document.getElementById("saveAttack").onclick = () => {
+        const at = nowIso();
+        const prodrome = lastBefore("prodrome", at);
+        addEvent({
+          type: "attack_start",
+          side: selectedSide,
+          severity: selectedSeverity,
+          aura: selectedAttackSymptoms.has("aura"),
+          flashingLights: selectedAttackSymptoms.has("flashingLights"),
+          blurryVision: selectedAttackSymptoms.has("blurryVision"),
+          nausea: selectedAttackSymptoms.has("nausea"),
+          prodromeToAttackMin: prodrome ? minsBetween(prodrome.at, at) : null
+        });
+        closeSheets(); toast("บันทึกเริ่มปวดแล้ว");
+      };
+
+      document.getElementById("improvePainChips").onclick = e => {
+        const b = e.target.closest(".chip"); if (!b) return;
+        selectedImprovePain = Number(b.dataset.value);
+        document.getElementById("improvePainChips").innerHTML = numbersHtml(selectedImprovePain);
+      };
+      document.getElementById("saveImproved").onclick = () => {
+        const attack = activeAttack();
+        if (!attack) return toast("ไม่มี active attack");
+        const at = nowIso();
+        const med = latestMedBefore(at);
+        addEvent({
+          type: "improved",
+          painAfter: selectedImprovePain,
+          attackId: attack.id,
+          attackDurationMin: minsBetween(attack.at, at),
+          prodromeToAttackMin: attack.prodromeToAttackMin,
+          medToImprovementMin: med ? minsBetween(med.at, at) : null
+        });
+        closeSheets(); toast("ดีขึ้นแล้ว");
+      };
+
+      document.getElementById("wakeHeadacheChips").onclick = e => {
+        const b = e.target.closest(".chip"); if (!b) return;
+        selectedWakeHeadache = b.dataset.value;
+        document.getElementById("wakeHeadacheChips").innerHTML = chipHtml(WAKE_HEADACHE, selectedWakeHeadache, "one");
+      };
+      document.getElementById("saveSleep").onclick = () => {
+        const bedtime = document.getElementById("bedtime").value;
+        const wakeTime = document.getElementById("waketime").value;
+        const napMinutes = Number(document.getElementById("napMin").value || 0);
+        const totalSleepMin = sleepDuration(bedtime, wakeTime);
+        const entry = { id: uid(), date: todayKey(), at: nowIso(), wakeHeadache: selectedWakeHeadache, bedtime, wakeTime, totalSleepMin, napMinutes };
+        sleepLogs = sleepLogs.filter(s => s.date !== todayKey());
+        sleepLogs.unshift(entry);
+        write(SLEEP_KEY, sleepLogs);
+        events.unshift({ id: uid(), type: "sleep", ...entry });
+        write(EVENT_KEY, events);
+        closeSheets(); toast("บันทึก sleep แล้ว"); render();
+      };
+
+      document.getElementById("saveDoctorEvent").onclick = () => {
+        const entry = { id: uid(), type: "appointment", date: document.getElementById("apptDate").value, time: document.getElementById("apptTime").value, place: document.getElementById("apptPlace").value.trim(), doctor: document.getElementById("doctorName").value.trim(), note: document.getElementById("apptNote").value.trim(), createdAt: nowIso() };
+        if (!entry.date) return toast("ใส่ date ก่อน");
+        calEvents.unshift(entry); write(CAL_KEY, calEvents); closeSheets(); toast("บันทึกนัดหมอแล้ว"); render();
+      };
+      document.getElementById("saveRefillEvent").onclick = () => {
+        const entry = { id: uid(), type: "refill", orderDate: document.getElementById("orderDate").value, refillDueDate: document.getElementById("refillDueDate").value, note: document.getElementById("refillNote").value.trim(), createdAt: nowIso() };
+        if (!entry.refillDueDate) return toast("ใส่ refill due date ก่อน");
+        calEvents.unshift(entry); write(CAL_KEY, calEvents); closeSheets(); toast("บันทึกวันยาแล้ว"); render();
+      };
+
+      render();
+    }
     setup();
   </script>
 </body>
