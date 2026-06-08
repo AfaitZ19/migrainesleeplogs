@@ -104,6 +104,8 @@
     .event.calendar .eventcard:before { border-color: var(--yellow); }
     .etitle { font-weight: 900; margin-bottom: 7px; }
     .report { white-space: pre-wrap; line-height: 1.55; font-size: 14px; }
+    .backup-actions { display: grid; gap: 10px; margin-top: 10px; }
+    .backup-note { color: var(--muted); font-size: 13px; line-height: 1.45; margin-top: 10px; }
 
     nav { position: fixed; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); background: rgba(16,18,23,.96); border-top: 1px solid var(--line); backdrop-filter: blur(16px); }
     .navbtn { background: transparent; border: 0; color: var(--muted); border-radius: 11px; padding: 8px 2px; cursor: pointer; display: grid; place-items: center; gap: 2px; font-size: 10px; }
@@ -240,6 +242,14 @@
             <div class="sub">แปลภาษาที่ใช้จริงเป็น clinical language</div>
           </div>
         </div>
+        <div class="band">
+          <div class="row between"><strong>Backup / Import</strong><span class="mini" id="backupStatus"></span></div>
+          <div class="backup-actions">
+            <button class="bigbtn green" id="exportDataBtn"><span class="ico">⬇️</span><strong>Export to Files</strong><small>migraine_data_YYYY-MM-DD.json</small></button>
+            <button class="bigbtn blue" id="importDataBtn"><span class="ico">⬆️</span><strong>Import from Files</strong><small>เลือก migraine_data.json จาก Files / iCloud Drive</small></button>
+          </div>
+          <div class="backup-note">iPhone PWA ต้องให้ผู้ใช้เลือกไฟล์เองจาก Files. แอปนี้ไม่อ่าน iCloud อัตโนมัติ และยังใช้ localStorage เพื่อทำงาน offline.</div>
+        </div>
         <div class="band report" id="doctorReport"></div>
       </section>
     </main>
@@ -336,12 +346,14 @@
   </div>
 
   <div class="toast" id="toast"></div>
+  <input id="importFileInput" type="file" accept=".json,application/json" style="display:none">
 
   <script>
     const EVENT_KEY = "mj_events_v2";
     const MED_KEY = "mj_meds_v2";
     const SLEEP_KEY = "mj_sleep_v1";
     const CAL_KEY = "mj_calendar_v1";
+    const LAST_EXPORT_KEY = "mj_last_export_v1";
 
     const MED_SCHEDULE = [
       { group: "MORNING", due: "09:00", meds: [
@@ -403,6 +415,12 @@
       catch { return fallback; }
     }
     function write(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+    function writeAllStores() {
+      write(EVENT_KEY, events);
+      write(MED_KEY, medLogs);
+      write(SLEEP_KEY, sleepLogs);
+      write(CAL_KEY, calEvents);
+    }
     function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
     function nowIso() { return new Date().toISOString(); }
     function todayKey() { return dateKey(nowIso()); }
@@ -418,6 +436,36 @@
       if (mins == null || Number.isNaN(mins)) return "-";
       if (mins < 60) return `${mins}m`;
       return `${Math.floor(mins/60)}h ${mins % 60 ? mins % 60 + "m" : ""}`.trim();
+    }
+    function lastExportAt() { return localStorage.getItem(LAST_EXPORT_KEY) || ""; }
+    function needsBackup() {
+      const last = lastExportAt();
+      return !last || Date.now() - new Date(last).getTime() > 24 * 60 * 60 * 1000;
+    }
+    function backupPayload() {
+      return {
+        schema: "migraine_journal_backup_v1",
+        exportedAt: nowIso(),
+        app: "Migraine Journal",
+        data: { events, medLogs, sleepLogs, calEvents }
+      };
+    }
+    function normalizeBackup(raw) {
+      const data = raw?.data || raw || {};
+      return {
+        events: Array.isArray(data.events) ? data.events : [],
+        medLogs: Array.isArray(data.medLogs) ? data.medLogs : [],
+        sleepLogs: Array.isArray(data.sleepLogs) ? data.sleepLogs : [],
+        calEvents: Array.isArray(data.calEvents) ? data.calEvents : []
+      };
+    }
+    function mergeById(localItems, importedItems) {
+      const map = new Map();
+      [...localItems, ...importedItems].forEach(item => {
+        const key = item?.id || `${item?.type || "item"}-${item?.at || item?.date || item?.createdAt || Math.random()}`;
+        map.set(key, item);
+      });
+      return [...map.values()];
     }
     function dueDateTime(date, time) { return new Date(`${date}T${time}:00`); }
     function medName(id) {
@@ -474,6 +522,59 @@
       el.textContent = msg;
       el.classList.add("on");
       setTimeout(() => el.classList.remove("on"), 1500);
+    }
+    function exportBackup() {
+      const payload = backupPayload();
+      const date = todayKey();
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `migraine_data_${date}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      localStorage.setItem(LAST_EXPORT_KEY, payload.exportedAt);
+      toast("Export แล้ว");
+      render();
+    }
+    async function importBackupFile(file) {
+      if (!file) return;
+      let parsed;
+      try {
+        parsed = JSON.parse(await file.text());
+      } catch {
+        toast("ไฟล์ JSON อ่านไม่ได้");
+        return;
+      }
+      const imported = normalizeBackup(parsed);
+      const hasLocal = events.length || medLogs.length || sleepLogs.length || calEvents.length;
+      let mode = "replace";
+      if (hasLocal) {
+        if (confirm("มีข้อมูลในเครื่องอยู่แล้ว\nกด OK = Replace local data")) {
+          mode = "replace";
+        } else if (confirm("ต้องการ Merge with local data ไหม?\nกด OK = Merge\nกด Cancel = Cancel import")) {
+          mode = "merge";
+        } else {
+          toast("ยกเลิก import");
+          return;
+        }
+      }
+      if (mode === "replace") {
+        events = imported.events;
+        medLogs = imported.medLogs;
+        sleepLogs = imported.sleepLogs;
+        calEvents = imported.calEvents;
+      } else {
+        events = mergeById(events, imported.events);
+        medLogs = mergeById(medLogs, imported.medLogs);
+        sleepLogs = mergeById(sleepLogs, imported.sleepLogs);
+        calEvents = mergeById(calEvents, imported.calEvents);
+      }
+      writeAllStores();
+      toast(mode === "replace" ? "Import แล้ว: replace" : "Import แล้ว: merge");
+      render();
     }
 
     function chipHtml(values, selected, mode = "set") {
@@ -605,6 +706,7 @@
       const missed = [];
       for (const group of MED_SCHEDULE) for (const med of group.meds) if (medStatus(med[0], group) === "missed") missed.push(med[1]);
       const parts = [];
+      if (needsBackup()) parts.push(`<div class="band warn"><strong>ยังไม่ได้ backup วันนี้</strong><div class="mini">Export ไป Files / iCloud Drive เพื่อใช้ข้ามเครื่อง</div></div>`);
       if (missed.length) parts.push(`<div class="band danger"><strong>ยาเลยเวลา</strong><div class="mini">${missed.map(esc).join(", ")}</div></div>`);
       if (soon.length) parts.push(`<div class="band warn"><strong>ใกล้ถึงนัด / refill</strong><div class="mini">${soon.map(e => esc(e.label)).join("<br>")}</div></div>`);
       document.getElementById("reminders").innerHTML = parts.join("");
@@ -684,6 +786,10 @@
       ];
       document.getElementById("doctorReport").textContent = lines.join("\n");
     }
+    function renderBackupStatus() {
+      const last = lastExportAt();
+      document.getElementById("backupStatus").textContent = last ? `last ${dateText(last)} ${timeText(last)}` : "no backup yet";
+    }
 
     function render() {
       document.getElementById("todayDate").textContent = new Date().toLocaleDateString("th-TH", { weekday: "long", month: "long", day: "numeric" });
@@ -694,6 +800,7 @@
       renderTimeline("todayTimeline", todayEvents);
       renderTimeline("allTimeline", sorted(events));
       renderReport();
+      renderBackupStatus();
       document.getElementById("improveQuick").style.opacity = activeAttack() ? "1" : ".55";
     }
 
@@ -702,6 +809,12 @@
       document.querySelectorAll("[data-open]").forEach(btn => btn.addEventListener("click", () => openSheet(btn.dataset.open + "Sheet")));
       document.querySelectorAll("[data-close], .sheetwrap").forEach(el => el.addEventListener("click", e => { if (e.target === el || e.target.hasAttribute("data-close")) closeSheets(); }));
       document.getElementById("improveQuick").onclick = () => activeAttack() ? openSheet("improveSheet") : toast("ยังไม่มี attack ที่ active");
+      document.getElementById("exportDataBtn").onclick = exportBackup;
+      document.getElementById("importDataBtn").onclick = () => document.getElementById("importFileInput").click();
+      document.getElementById("importFileInput").onchange = e => {
+        importBackupFile(e.target.files?.[0]);
+        e.target.value = "";
+      };
 
       document.getElementById("prodromeChips").onclick = e => {
         const b = e.target.closest(".chip"); if (!b) return;
