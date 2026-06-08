@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111318">
+  <title>Migraine Pattern Journal</title>
+  <style>
+    :root {
+      --bg: #111318;
+      --panel: #181b22;
+      --panel-2: #20242d;
+      --line: rgba(255,255,255,.09);
+      --text: #f6f1ea;
+      --muted: #a8adb7;
+      --hot: #f06f8f;
+      --hot-2: #ffb1c4;
+      --sun: #f8c654;
+      --leaf: #62d28f;
+      --sky: #72b7ff;
+      --mist: #c4b5fd;
+      --shadow: 0 18px 48px rgba(0,0,0,.32);
+      --r: 14px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { overflow: hidden; }
+    button, input, textarea { font: inherit; }
+    button { -webkit-tap-highlight-color: transparent; }
+
+    #app { height: 100dvh; display: grid; grid-template-rows: 1fr auto; }
+    main { overflow: auto; padding: 18px 16px 104px; }
+    .screen { display: none; max-width: 760px; margin: 0 auto; }
+    .screen.on { display: block; }
+    .top { padding: 22px 2px 18px; display: flex; justify-content: space-between; gap: 16px; align-items: flex-end; }
+    h1 { margin: 0; font-size: 30px; line-height: 1; letter-spacing: 0; }
+    .sub { color: var(--muted); font-size: 13px; margin-top: 7px; }
+    .streak { text-align: right; color: var(--sun); font-weight: 800; }
+    .streak span { display: block; color: var(--muted); font-size: 11px; font-weight: 600; }
+
+    .quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .quick-grid .wide { grid-column: 1 / -1; }
+    .action {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      min-height: 92px;
+      padding: 16px;
+      border-radius: var(--r);
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+    .action:active, .chip:active, .nav-btn:active, .primary:active { transform: scale(.98); }
+    .action strong { display: block; font-size: 17px; }
+    .action small { color: var(--muted); font-size: 12px; }
+    .action.mist { background: linear-gradient(145deg, rgba(196,181,253,.18), rgba(24,27,34,.98)); border-color: rgba(196,181,253,.3); }
+    .action.hot { background: linear-gradient(145deg, rgba(240,111,143,.2), rgba(24,27,34,.98)); border-color: rgba(240,111,143,.34); }
+    .action.leaf { background: linear-gradient(145deg, rgba(98,210,143,.18), rgba(24,27,34,.98)); border-color: rgba(98,210,143,.3); }
+    .action.sky { background: linear-gradient(145deg, rgba(114,183,255,.17), rgba(24,27,34,.98)); border-color: rgba(114,183,255,.3); }
+    .emoji { font-size: 28px; line-height: 1; }
+
+    .band, .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--r);
+      padding: 14px;
+    }
+    .band { margin-top: 14px; }
+    .label { color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin: 22px 2px 10px; }
+    .row { display: flex; align-items: center; gap: 12px; }
+    .row.between { justify-content: space-between; }
+    .pill-row { display: flex; flex-wrap: wrap; gap: 7px; }
+    .pill { background: var(--panel-2); color: var(--text); border-radius: 999px; padding: 5px 10px; font-size: 12px; }
+    .muted { color: var(--muted); }
+    .empty { color: var(--muted); text-align: center; padding: 34px 18px; }
+
+    .timeline { position: relative; margin-left: 8px; }
+    .timeline::before { content: ""; position: absolute; top: 4px; bottom: 4px; left: 70px; width: 2px; background: var(--line); }
+    .event {
+      position: relative;
+      display: grid;
+      grid-template-columns: 58px 1fr;
+      gap: 22px;
+      margin-bottom: 11px;
+      align-items: start;
+    }
+    .time { color: var(--muted); font-size: 12px; padding-top: 12px; text-align: right; }
+    .event-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 13px; }
+    .event-card::before {
+      content: "";
+      position: absolute;
+      left: 64px;
+      top: 17px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--panel);
+      border: 2px solid var(--mist);
+    }
+    .event.attack_start .event-card::before { border-color: var(--hot); }
+    .event.attack_resolved .event-card::before { border-color: var(--leaf); }
+    .event.medication .event-card::before { border-color: var(--sky); }
+    .event.morning_checkin .event-card::before { border-color: var(--sun); }
+    .event-title { font-weight: 800; margin-bottom: 7px; }
+    .meta { color: var(--muted); font-size: 12px; margin-top: 7px; }
+
+    .pattern {
+      background: linear-gradient(145deg, rgba(248,198,84,.16), rgba(24,27,34,.98));
+      border-color: rgba(248,198,84,.3);
+    }
+    .pattern strong { color: var(--sun); }
+
+    nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      background: rgba(17,19,24,.95);
+      border-top: 1px solid var(--line);
+      padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+      backdrop-filter: blur(16px);
+    }
+    .nav-btn {
+      background: transparent;
+      border: 0;
+      color: var(--muted);
+      border-radius: 10px;
+      padding: 8px 4px;
+      font-size: 11px;
+      display: grid;
+      gap: 3px;
+      place-items: center;
+      cursor: pointer;
+    }
+    .nav-btn span { font-size: 20px; }
+    .nav-btn.on { color: var(--text); background: var(--panel-2); }
+
+    .sheet-wrap {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.62);
+      display: none;
+      align-items: end;
+      z-index: 10;
+    }
+    .sheet-wrap.on { display: flex; }
+    .sheet {
+      width: 100%;
+      max-height: 92dvh;
+      overflow: auto;
+      background: #171a21;
+      border-radius: 22px 22px 0 0;
+      padding: 10px 16px calc(18px + env(safe-area-inset-bottom));
+      box-shadow: var(--shadow);
+    }
+    .handle { width: 38px; height: 4px; background: var(--line); border-radius: 999px; margin: 4px auto 14px; }
+    .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .sheet-title { font-size: 20px; font-weight: 900; }
+    .icon-btn { border: 0; background: var(--panel-2); color: var(--muted); border-radius: 50%; width: 36px; height: 36px; cursor: pointer; }
+
+    .chip-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+    .chip {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      min-height: 56px;
+      border-radius: 12px;
+      padding: 10px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .chip.on { border-color: var(--mist); background: rgba(196,181,253,.18); }
+    .chip.hot.on { border-color: var(--hot); background: rgba(240,111,143,.18); }
+    .chip small { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+    .primary {
+      width: 100%;
+      border: 0;
+      color: #1b1016;
+      background: var(--hot-2);
+      border-radius: 13px;
+      padding: 15px;
+      font-weight: 900;
+      margin-top: 14px;
+      cursor: pointer;
+    }
+    .secondary {
+      width: 100%;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      background: var(--panel);
+      border-radius: 13px;
+      padding: 13px;
+      font-weight: 800;
+      margin-top: 9px;
+      cursor: pointer;
+    }
+    .seg { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
+    .seg.three { grid-template-columns: repeat(3, 1fr); }
+    .seg button {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 12px;
+      min-height: 50px;
+      cursor: pointer;
+    }
+    .seg button.on { border-color: var(--hot); background: rgba(240,111,143,.18); }
+    .range-row { display: grid; grid-template-columns: 1fr 58px; gap: 12px; align-items: center; }
+    input[type=range] { width: 100%; accent-color: var(--hot); }
+    .big-number { text-align: center; font-size: 30px; font-weight: 900; color: var(--hot-2); }
+    textarea {
+      width: 100%;
+      min-height: 70px;
+      resize: vertical;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      padding: 12px;
+    }
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 88px;
+      transform: translateX(-50%) translateY(18px);
+      opacity: 0;
+      pointer-events: none;
+      background: var(--leaf);
+      color: #07170d;
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-weight: 900;
+      transition: .2s ease;
+      z-index: 20;
+      white-space: nowrap;
+    }
+    .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .report-block { white-space: pre-wrap; line-height: 1.55; font-size: 14px; }
+
+    @media (min-width: 720px) {
+      main { padding-top: 26px; }
+      .quick-grid { grid-template-columns: repeat(4, 1fr); }
+      .quick-grid .wide { grid-column: span 2; }
+      .sheet { max-width: 560px; margin: 0 auto; border-radius: 22px 22px 0 0; }
+      .chip-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <main>
+      <section id="today" class="screen on">
+        <div class="top">
+          <div>
+            <h1>Today</h1>
+            <div class="sub" id="todayDate"></div>
+          </div>
+          <div class="streak" id="streakBox"></div>
+        </div>
+
+        <div class="quick-grid">
+          <button class="action mist wide" data-open="prodrome">
+            <span class="emoji">🌫️</span>
+            <span><strong>Something Feels Off</strong><small>นอย, ใจเต้นเร็ว, ตาเบลอ</small></span>
+          </button>
+          <button class="action hot" data-open="attack">
+            <span class="emoji">🤕</span>
+            <span><strong>Migraine</strong><small>Intensity + location</small></span>
+          </button>
+          <button class="action leaf" id="resolveBtn">
+            <span class="emoji">😮‍💨</span>
+            <span><strong>Resolved</strong><small>One tap when it ends</small></span>
+          </button>
+          <button class="action sky" data-open="morning">
+            <span class="emoji">☀️</span>
+            <span><strong>Morning</strong><small>3 taps, no typing</small></span>
+          </button>
+        </div>
+
+        <div id="activeEpisode"></div>
+        <div class="label">Today Timeline</div>
+        <div id="todayTimeline"></div>
+      </section>
+
+      <section id="timeline" class="screen">
+        <div class="top">
+          <div>
+            <h1>Timeline</h1>
+            <div class="sub">The story, not the spreadsheet</div>
+          </div>
+        </div>
+        <div id="allTimeline"></div>
+      </section>
+
+      <section id="patterns" class="screen">
+        <div class="top">
+          <div>
+            <h1>Patterns</h1>
+            <div class="sub">Signals before attacks</div>
+          </div>
+        </div>
+        <div id="patternsContent"></div>
+      </section>
+
+      <section id="report" class="screen">
+        <div class="top">
+          <div>
+            <h1>Report</h1>
+            <div class="sub">User language translated for neurology visits</div>
+          </div>
+        </div>
+        <div class="band report-block" id="doctorReport"></div>
+      </section>
+    </main>
+
+    <nav>
+      <button class="nav-btn on" data-screen="today"><span>⚡</span>Today</button>
+      <button class="nav-btn" data-screen="timeline"><span>🕰️</span>Timeline</button>
+      <button class="nav-btn" data-screen="patterns"><span>🔎</span>Patterns</button>
+      <button class="nav-btn" data-screen="report"><span>🩺</span>Report</button>
+    </nav>
+  </div>
+
+  <div class="sheet-wrap" id="prodromeSheet">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheet-head"><div class="sheet-title">🌫️ Something Feels Off</div><button class="icon-btn" data-close>×</button></div>
+      <div class="chip-grid" id="prodromeChips"></div>
+      <button class="primary" id="saveProdrome">Save. Done.</button>
+      <button class="secondary" data-close>Cancel</button>
+    </div>
+  </div>
+
+  <div class="sheet-wrap" id="attackSheet">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheet-head"><div class="sheet-title">🤕 Migraine Attack</div><button class="icon-btn" data-close>×</button></div>
+      <div class="label">Intensity</div>
+      <div class="range-row">
+        <input id="attackIntensity" type="range" min="1" max="10" value="7">
+        <div class="big-number" id="attackIntensityValue">7</div>
+      </div>
+      <div class="label">Location</div>
+      <div class="chip-grid" id="locationChips"></div>
+      <div class="label">Medication, optional</div>
+      <div class="chip-grid" id="medChips"></div>
+      <button class="primary" id="saveAttack">Save Attack</button>
+      <button class="secondary" data-close>Cancel</button>
+    </div>
+  </div>
+
+  <div class="sheet-wrap" id="morningSheet">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheet-head"><div class="sheet-title">☀️ Morning Check-In</div><button class="icon-btn" data-close>×</button></div>
+      <div class="label">Sleep</div>
+      <div class="seg three" id="sleepSeg">
+        <button data-value="bad">😵</button><button data-value="ok" class="on">😐</button><button data-value="good">🙂</button>
+      </div>
+      <div class="label">Mood</div>
+      <div class="seg three" id="moodSeg">
+        <button data-value="นอย">นอย</button><button data-value="ok" class="on">ok</button><button data-value="good">good</button>
+      </div>
+      <div class="label">Morning body</div>
+      <div class="chip-grid" id="morningChips"></div>
+      <button class="primary" id="saveMorning">Save Check-In</button>
+      <button class="secondary" data-close>Cancel</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const STORE_KEY = "migraine_pattern_events_v1";
+
+    const TERMS = {
+      "นอย": { icon: "😵‍💫", clinical: ["Mood change", "Irritability", "Prodrome symptom"] },
+      "หาเรื่องนอย": { icon: "🧠", clinical: ["Prodrome mood disturbance"] },
+      "ใจเต้นเร็ว": { icon: "💓", clinical: ["Palpitations", "Tachycardia", "Autonomic symptom"] },
+      "แสงมาจากไหนวะ": { icon: "✨", clinical: ["Visual aura", "Photopsia", "Visual disturbance"] },
+      "ตาเบลอ": { icon: "👁️", clinical: ["Visual disturbance", "Aura", "Cognitive visual symptom"] },
+      "โลกแปลกๆ": { icon: "🫥", clinical: ["Derealization", "Cognitive symptom"] },
+      "คอตึง": { icon: "🪢", clinical: ["Neck stiffness", "Neck tension"] },
+      "เพลีย": { icon: "🪫", clinical: ["Fatigue", "Postdrome fatigue"] },
+      "ทำเหี้ยอะไรไม่ได้": { icon: "🛌", clinical: ["Severe fatigue", "Brain fog", "Functional impairment"] }
+    };
+
+    const LOCATIONS = {
+      "ท้ายทอย": ["Occipital region", "Back of head"],
+      "หลังตา": ["Retro-orbital pain"],
+      "ข้างเดียว": ["Unilateral headache"],
+      "ทั้งหัว": ["Holocranial headache"],
+      "คอ": ["Neck/base involvement"]
+    };
+
+    const MEDS = ["none", "paracetamol", "ibuprofen", "triptan", "antiemetic"];
+
+    let events = loadEvents();
+    let selectedProdrome = new Set();
+    let selectedLocation = "ท้ายทอย";
+    let selectedMedication = null;
+    let selectedMorning = new Set();
+
+    function loadEvents() {
+      try { return JSON.parse(localStorage.getItem(STORE_KEY) || "[]"); }
+      catch { return []; }
+    }
+
+    function saveEvents() {
+      localStorage.setItem(STORE_KEY, JSON.stringify(events));
+    }
+
+    function uid() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    }
+
+    function nowIso() {
+      return new Date().toISOString();
+    }
+
+    function localDateKey(iso) {
+      const d = new Date(iso);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function todayKey() {
+      return localDateKey(new Date().toISOString());
+    }
+
+    function timeLabel(iso) {
+      return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function dateLabel(iso) {
+      return new Date(iso).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[char]);
+    }
+
+    function addEvent(event) {
+      events.unshift({ id: uid(), occurredAt: nowIso(), ...event });
+      saveEvents();
+      render();
+    }
+
+    function sortedEvents() {
+      return [...events].sort((a, b) => new Date(b.occurredAt) - new Date(a.occurredAt));
+    }
+
+    function activeAttack() {
+      const ordered = [...events].sort((a, b) => new Date(a.occurredAt) - new Date(b.occurredAt));
+      let active = null;
+      for (const event of ordered) {
+        if (event.type === "attack_start") active = event;
+        if (event.type === "attack_resolved") active = null;
+      }
+      return active;
+    }
+
+    function renderChipGrid(container, items, selected, options = {}) {
+      container.innerHTML = items.map(item => {
+        const label = typeof item === "string" ? item : item.label;
+        const sub = typeof item === "string" ? "" : item.sub;
+        const icon = TERMS[label]?.icon || "";
+        const active = selected instanceof Set ? selected.has(label) : selected === label;
+        return `<button class="chip ${options.hot ? "hot" : ""} ${active ? "on" : ""}" data-value="${escapeHtml(label)}">${icon} ${escapeHtml(label)}${sub ? `<small>${escapeHtml(sub)}</small>` : ""}</button>`;
+      }).join("");
+    }
+
+    function openSheet(id) {
+      document.getElementById(id).classList.add("on");
+    }
+
+    function closeSheets() {
+      document.querySelectorAll(".sheet-wrap").forEach(sheet => sheet.classList.remove("on"));
+    }
+
+    function toast(message) {
+      const el = document.getElementById("toast");
+      el.textContent = message;
+      el.classList.add("on");
+      setTimeout(() => el.classList.remove("on"), 1700);
+    }
+
+    function eventTitle(event) {
+      if (event.type === "prodrome") return "🌫️ Something Feels Off";
+      if (event.type === "attack_start") return "🤕 Migraine Attack";
+      if (event.type === "attack_resolved") return "😮‍💨 Resolved";
+      if (event.type === "medication") return "💊 Medication";
+      if (event.type === "morning_checkin") return "☀️ Morning Check-In";
+      return "Event";
+    }
+
+    function eventDetails(event) {
+      if (event.type === "prodrome") return pillList(event.userLabels || []);
+      if (event.type === "attack_start") {
+        const items = [`Intensity ${event.intensity}/10`, event.location].concat(event.medication && event.medication !== "none" ? [`Med: ${event.medication}`] : []);
+        return pillList(items);
+      }
+      if (event.type === "attack_resolved") return `<div class="muted">Attack marked as ended.</div>`;
+      if (event.type === "morning_checkin") return pillList([`sleep: ${event.sleep}`, `mood: ${event.mood}`].concat(event.userLabels || []));
+      return "";
+    }
+
+    function pillList(items) {
+      return `<div class="pill-row">${items.map(item => `<span class="pill">${escapeHtml(item)}</span>`).join("")}</div>`;
+    }
+
+    function renderTimeline(container, list) {
+      if (!list.length) {
+        container.innerHTML = `<div class="empty">Nothing logged yet. One tap is enough to start.</div>`;
+        return;
+      }
+      container.innerHTML = `<div class="timeline">${list.map(event => `
+        <div class="event ${escapeHtml(event.type)}">
+          <div class="time">${timeLabel(event.occurredAt)}</div>
+          <div class="event-card">
+            <div class="event-title">${eventTitle(event)}</div>
+            ${eventDetails(event)}
+            <div class="meta">${dateLabel(event.occurredAt)}</div>
+          </div>
+        </div>`).join("")}</div>`;
+    }
+
+    function getEpisodes() {
+      const chronological = [...events].sort((a, b) => new Date(a.occurredAt) - new Date(b.occurredAt));
+      const episodes = [];
+      let current = null;
+      for (const event of chronological) {
+        if (event.type === "prodrome" && !current) current = { events: [], startedAt: event.occurredAt };
+        if (event.type === "attack_start" && !current) current = { events: [], startedAt: event.occurredAt };
+        if (current) current.events.push(event);
+        if (current && event.type === "attack_resolved") {
+          episodes.push(current);
+          current = null;
+        }
+      }
+      if (current) episodes.push(current);
+      return episodes;
+    }
+
+    function detectPattern(episode) {
+      const labels = episode.events.flatMap(event => event.userLabels || []);
+      const hasMood = labels.includes("นอย") || labels.includes("หาเรื่องนอย");
+      const hasHeart = labels.includes("ใจเต้นเร็ว");
+      const hasVisual = labels.includes("แสงมาจากไหนวะ") || labels.includes("ตาเบลอ");
+      const hasAttack = episode.events.some(event => event.type === "attack_start");
+      const hasCrash = labels.includes("เพลีย") || labels.includes("ทำเหี้ยอะไรไม่ได้");
+      const score = [hasMood, hasHeart, hasVisual, hasAttack, hasCrash].filter(Boolean).length;
+      return { hasMood, hasHeart, hasVisual, hasAttack, hasCrash, score };
+    }
+
+    function renderPatterns() {
+      const el = document.getElementById("patternsContent");
+      const episodes = getEpisodes().filter(ep => ep.events.some(event => event.type === "attack_start"));
+      if (!episodes.length) {
+        el.innerHTML = `<div class="empty">Patterns will appear after a few prodrome and attack logs.</div>`;
+        return;
+      }
+      const matched = episodes.map(detectPattern).filter(p => p.score >= 3).length;
+      const prodromeCounts = {};
+      for (const event of events) {
+        for (const label of event.userLabels || []) prodromeCounts[label] = (prodromeCounts[label] || 0) + 1;
+      }
+      const topLabels = Object.entries(prodromeCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+      el.innerHTML = `
+        <div class="band pattern">
+          <div><strong>${matched}/${episodes.length}</strong> attack episodes match part of your sequence.</div>
+          <div class="meta">นอย → ใจเต้นเร็ว → visual disturbance → migraine → exhaustion</div>
+        </div>
+        <div class="label">Most logged signals</div>
+        <div class="band">${topLabels.length ? topLabels.map(([label, count]) => `<div class="row between" style="margin-bottom:9px"><span>${TERMS[label]?.icon || ""} ${escapeHtml(label)}</span><strong>${count}</strong></div>`).join("") : "No signals yet."}</div>
+        <div class="label">Recent episodes</div>
+        ${episodes.slice(-5).reverse().map(ep => {
+          const pattern = detectPattern(ep);
+          return `<div class="band">
+            <div class="row between"><strong>${dateLabel(ep.startedAt)}</strong><span class="muted">${pattern.score}/5 signals</span></div>
+            <div class="meta">${ep.events.map(eventTitle).join(" → ")}</div>
+          </div>`;
+        }).join("")}
+      `;
+    }
+
+    function clinicalFor(label) {
+      return TERMS[label]?.clinical || LOCATIONS[label] || [label];
+    }
+
+    function renderReport() {
+      const el = document.getElementById("doctorReport");
+      if (!events.length) {
+        el.textContent = "No data recorded yet.";
+        return;
+      }
+      const attacks = events.filter(event => event.type === "attack_start");
+      const prodromes = events.filter(event => event.type === "prodrome");
+      const episodes = getEpisodes().filter(ep => ep.events.some(event => event.type === "attack_start"));
+      const lines = [];
+      lines.push(`Migraine Pattern Report`);
+      lines.push(`Generated: ${new Date().toLocaleString()}`);
+      lines.push(`Recorded events: ${events.length}`);
+      lines.push(`Migraine attacks: ${attacks.length}`);
+      lines.push(`Prodrome/off-feeling logs: ${prodromes.length}`);
+      lines.push("");
+      lines.push("Clinical translation dictionary:");
+      Object.keys(TERMS).forEach(label => lines.push(`- "${label}" -> ${clinicalFor(label).join(" / ")}`));
+      lines.push("");
+      lines.push("Recent timeline:");
+      sortedEvents().slice(0, 20).reverse().forEach(event => {
+        const labels = event.userLabels || [];
+        const clinical = labels.flatMap(clinicalFor);
+        const extras = event.type === "attack_start" ? [`Intensity ${event.intensity}/10`, `Location ${event.location} (${clinicalFor(event.location).join(" / ")})`] : [];
+        lines.push(`${dateLabel(event.occurredAt)} ${timeLabel(event.occurredAt)} - ${eventTitle(event).replace(/[^\w\s:/().-]/g, "").trim()}`);
+        [...labels.map(label => `"${label}"`), ...extras].forEach(item => lines.push(`  - ${item}`));
+        if (clinical.length) lines.push(`  Clinical: ${[...new Set(clinical)].join(" / ")}`);
+      });
+      lines.push("");
+      lines.push("Episode pattern notes:");
+      episodes.slice(-6).forEach(ep => {
+        const p = detectPattern(ep);
+        lines.push(`- ${dateLabel(ep.startedAt)}: ${p.score}/5 sequence signals observed.`);
+      });
+      el.textContent = lines.join("\n");
+    }
+
+    function renderActiveEpisode() {
+      const el = document.getElementById("activeEpisode");
+      const active = activeAttack();
+      if (!active) {
+        el.innerHTML = "";
+        return;
+      }
+      el.innerHTML = `<div class="band pattern"><div class="row between"><strong>Active migraine</strong><span>${timeLabel(active.occurredAt)}</span></div><div class="meta">Intensity ${active.intensity}/10, ${escapeHtml(active.location)}. Tap Resolved when it ends.</div></div>`;
+    }
+
+    function renderTodayMeta() {
+      document.getElementById("todayDate").textContent = new Date().toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
+      const days = new Set(events.map(event => localDateKey(event.occurredAt)));
+      document.getElementById("streakBox").innerHTML = days.size ? `${days.size}<span>logged days</span>` : "";
+    }
+
+    function render() {
+      renderTodayMeta();
+      renderActiveEpisode();
+      const todayEvents = sortedEvents().filter(event => localDateKey(event.occurredAt) === todayKey());
+      renderTimeline(document.getElementById("todayTimeline"), todayEvents);
+      renderTimeline(document.getElementById("allTimeline"), sortedEvents());
+      renderPatterns();
+      renderReport();
+      document.getElementById("resolveBtn").disabled = !activeAttack();
+      document.getElementById("resolveBtn").style.opacity = activeAttack() ? "1" : ".55";
+    }
+
+    function setup() {
+      renderChipGrid(document.getElementById("prodromeChips"), Object.keys(TERMS), selectedProdrome);
+      renderChipGrid(document.getElementById("locationChips"), Object.keys(LOCATIONS), selectedLocation, { hot: true });
+      renderChipGrid(document.getElementById("medChips"), MEDS, new Set(), { hot: true });
+      renderChipGrid(document.getElementById("morningChips"), ["คอตึง", "เพลีย", "ตาเบลอ", "นอย"], selectedMorning);
+
+      document.querySelectorAll("[data-screen]").forEach(btn => btn.addEventListener("click", () => {
+        document.querySelectorAll(".screen").forEach(screen => screen.classList.remove("on"));
+        document.querySelectorAll(".nav-btn").forEach(nav => nav.classList.remove("on"));
+        document.getElementById(btn.dataset.screen).classList.add("on");
+        btn.classList.add("on");
+      }));
+
+      document.querySelectorAll("[data-open]").forEach(btn => btn.addEventListener("click", () => {
+        if (btn.dataset.open === "prodrome") {
+          selectedProdrome = new Set();
+          renderChipGrid(document.getElementById("prodromeChips"), Object.keys(TERMS), selectedProdrome);
+          openSheet("prodromeSheet");
+        }
+        if (btn.dataset.open === "attack") openSheet("attackSheet");
+        if (btn.dataset.open === "morning") {
+          selectedMorning = new Set();
+          renderChipGrid(document.getElementById("morningChips"), ["คอตึง", "เพลีย", "ตาเบลอ", "นอย"], selectedMorning);
+          openSheet("morningSheet");
+        }
+      }));
+
+      document.querySelectorAll("[data-close], .sheet-wrap").forEach(el => el.addEventListener("click", event => {
+        if (event.target === el || event.target.hasAttribute("data-close")) closeSheets();
+      }));
+
+      document.getElementById("prodromeChips").addEventListener("click", event => {
+        const btn = event.target.closest(".chip");
+        if (!btn) return;
+        const value = btn.dataset.value;
+        selectedProdrome.has(value) ? selectedProdrome.delete(value) : selectedProdrome.add(value);
+        renderChipGrid(document.getElementById("prodromeChips"), Object.keys(TERMS), selectedProdrome);
+      });
+
+      document.getElementById("locationChips").addEventListener("click", event => {
+        const btn = event.target.closest(".chip");
+        if (!btn) return;
+        selectedLocation = btn.dataset.value;
+        renderChipGrid(document.getElementById("locationChips"), Object.keys(LOCATIONS), selectedLocation, { hot: true });
+      });
+
+      document.getElementById("medChips").addEventListener("click", event => {
+        const btn = event.target.closest(".chip");
+        if (!btn) return;
+        selectedMedication = btn.dataset.value;
+        renderChipGrid(document.getElementById("medChips"), MEDS, selectedMedication, { hot: true });
+      });
+
+      document.getElementById("morningChips").addEventListener("click", event => {
+        const btn = event.target.closest(".chip");
+        if (!btn) return;
+        const value = btn.dataset.value;
+        selectedMorning.has(value) ? selectedMorning.delete(value) : selectedMorning.add(value);
+        renderChipGrid(document.getElementById("morningChips"), ["คอตึง", "เพลีย", "ตาเบลอ", "นอย"], selectedMorning);
+      });
+
+      document.querySelectorAll(".seg").forEach(seg => seg.addEventListener("click", event => {
+        const btn = event.target.closest("button");
+        if (!btn) return;
+        seg.querySelectorAll("button").forEach(item => item.classList.remove("on"));
+        btn.classList.add("on");
+      }));
+
+      document.getElementById("attackIntensity").addEventListener("input", event => {
+        document.getElementById("attackIntensityValue").textContent = event.target.value;
+      });
+
+      document.getElementById("saveProdrome").addEventListener("click", () => {
+        if (!selectedProdrome.size) return toast("Pick at least one signal");
+        addEvent({ type: "prodrome", userLabels: [...selectedProdrome], clinicalLabels: [...selectedProdrome].flatMap(clinicalFor) });
+        closeSheets();
+        toast("Logged");
+      });
+
+      document.getElementById("saveAttack").addEventListener("click", () => {
+        const intensity = Number(document.getElementById("attackIntensity").value);
+        addEvent({ type: "attack_start", intensity, location: selectedLocation, medication: selectedMedication });
+        closeSheets();
+        toast("Attack logged");
+      });
+
+      document.getElementById("resolveBtn").addEventListener("click", () => {
+        if (!activeAttack()) return toast("No active attack");
+        addEvent({ type: "attack_resolved" });
+        toast("Resolved");
+      });
+
+      document.getElementById("saveMorning").addEventListener("click", () => {
+        const sleep = document.querySelector("#sleepSeg .on").dataset.value;
+        const mood = document.querySelector("#moodSeg .on").dataset.value;
+        addEvent({ type: "morning_checkin", sleep, mood, userLabels: [...selectedMorning] });
+        closeSheets();
+        toast("Check-in saved");
+      });
+
+      render();
+    }
+
+    setup();
+  </script>
+</body>
+</html>
