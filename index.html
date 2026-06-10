@@ -192,7 +192,28 @@
     }
     .graphchips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
     .graphchip { background: rgba(255,255,255,.07); border: 1px solid var(--line); border-radius: 999px; padding: 6px 9px; font-size: 12px; color: var(--muted); }
-    .report { white-space: pre-wrap; line-height: 1.55; font-size: 14px; }
+    .report { display: grid; gap: 14px; line-height: 1.45; font-size: 14px; }
+    .reporthero { border: 1px solid rgba(119,187,255,.28); background: linear-gradient(145deg, rgba(119,187,255,.12), rgba(255,255,255,.03)); border-radius: var(--r); padding: 14px; }
+    .reporttitle { font-size: 20px; font-weight: 950; margin-bottom: 4px; }
+    .reportmeta { color: var(--muted); font-size: 12px; }
+    .reportsection { border-top: 1px solid var(--line); padding-top: 13px; }
+    .reportsection h2 { font-size: 15px; margin: 0 0 9px; letter-spacing: .02em; }
+    .metricgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .metric { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 10px; min-height: 72px; }
+    .metric b { display: block; font-size: 22px; line-height: 1.05; margin-bottom: 5px; }
+    .metric span { display: block; color: var(--muted); font-size: 12px; }
+    .reporttable { display: grid; gap: 7px; }
+    .reportrow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) auto; gap: 8px; align-items: start; padding: 9px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,.035); }
+    .reportrow.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); }
+    .reportrow strong { overflow-wrap: anywhere; }
+    .reportcell { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+    .reportbadge { justify-self: end; border-radius: 999px; background: var(--panel2); padding: 4px 8px; font-size: 12px; white-space: nowrap; }
+    .reportlist { display: grid; gap: 7px; }
+    .reportitem { padding: 9px; border-radius: 12px; background: rgba(255,255,255,.035); border: 1px solid var(--line); }
+    .clinicalnote { color: var(--muted); font-size: 12px; margin-top: 7px; }
+    @media (min-width: 760px) {
+      .metricgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
     .backup-actions { display: grid; gap: 10px; margin-top: 10px; }
     .backup-note { color: var(--muted); font-size: 13px; line-height: 1.45; margin-top: 10px; }
 
@@ -334,6 +355,7 @@
             <div class="sub">แปลภาษาที่ใช้จริงเป็น clinical language</div>
           </div>
         </div>
+        <div class="band report" id="doctorReport"></div>
         <div class="band">
           <div class="row between"><strong>Backup / Import</strong><span class="mini" id="backupStatus"></span></div>
           <div class="backup-actions">
@@ -342,7 +364,6 @@
           </div>
           <div class="backup-note">iPhone PWA ต้องให้ผู้ใช้เลือกไฟล์เองจาก Files. แอปนี้ไม่อ่าน iCloud อัตโนมัติ และยังใช้ localStorage เพื่อทำงาน offline.</div>
         </div>
-        <div class="band report" id="doctorReport"></div>
       </section>
     </main>
 
@@ -1096,47 +1117,149 @@
     function renderReport() {
       const attacks = events.filter(e => e.type === "attack_start");
       const improved = events.filter(e => e.type === "improved");
-      const avgSeverity = attacks.length ? (attacks.reduce((s, a) => s + a.severity, 0) / attacks.length).toFixed(1) : "-";
-      const avgDur = improved.length ? fmtMins(Math.round(improved.reduce((s, e) => s + (e.attackDurationMin || 0), 0) / improved.length)) : "-";
+      const sortedAttacks = [...attacks].sort((a, b) => new Date(b.at) - new Date(a.at));
+      const avgSeverity = attacks.length ? (attacks.reduce((s, a) => s + Number(a.severity || 0), 0) / attacks.length).toFixed(1) : "-";
+      const completedDurations = improved.map(e => e.attackDurationMin).filter(v => Number.isFinite(Number(v)));
+      const avgDur = completedDurations.length ? fmtMins(Math.round(completedDurations.reduce((s, v) => s + Number(v), 0) / completedDurations.length)) : "-";
       const nurtec = medLogs.filter(m => m.medId === "nurtec75").length;
-      const avgSleep = sleepLogs.length ? fmtMins(Math.round(sleepLogs.reduce((s, l) => s + (l.totalSleepMin || 0), 0) / sleepLogs.length)) : "-";
+      const sleepDurations = sleepLogs.map(l => l.totalSleepMin).filter(v => Number.isFinite(Number(v)));
+      const avgSleep = sleepDurations.length ? fmtMins(Math.round(sleepDurations.reduce((s, v) => s + Number(v), 0) / sleepDurations.length)) : "-";
       const wakeHeadache = sleepLogs.filter(s => s.wakeHeadache && s.wakeHeadache !== "ไม่ปวด").length;
       const light = attacks.filter(a => a.flashingLights || a.aura).length;
       const prodromeCounts = {};
       events.filter(e => e.type === "prodrome").forEach(e => (e.symptoms || []).forEach(s => prodromeCounts[s] = (prodromeCounts[s] || 0) + 1));
-      const topTriggers = Object.entries(prodromeCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, v]) => `${k} (${CLINICAL[k] || "prodrome"}): ${v}`).join("\n") || "-";
-      const calendarLines = upcomingCalendar().slice(0, 8).map(e => `- ${e.label}${e.note ? " · " + e.note : ""}`).join("\n") || "-";
-      const lines = [
-        "Neurologist Migraine Report",
-        `Generated: ${new Date().toLocaleString()}`,
-        "",
-        `Migraine frequency: ${attacks.length} attacks recorded`,
-        `Average severity: ${avgSeverity}/10`,
-        `Average attack duration: ${avgDur}`,
-        `Medication usage logs: ${medLogs.length}`,
-        `Nurtec usage: ${nurtec} doses`,
-        `Average sleep duration: ${avgSleep}`,
-        `Wake-up headache frequency: ${wakeHeadache}/${sleepLogs.length || 0} mornings`,
-        "",
-        "Suspected triggers / prodrome signals:",
-        topTriggers,
-        "",
-        `Light exposure / visual aura correlation: ${light}/${attacks.length || 0} attacks included aura/flashing lights`,
-        "Heat exposure correlation: not directly logged yet",
-        "Noise exposure correlation: not directly logged yet",
-        "",
-        "Medication timing correlation:",
-        improved.slice(0, 10).map(e => `- ${dateText(e.at)} ${timeText(e.at)}: medication to improvement ${fmtMins(e.medToImprovementMin)}; attack duration ${fmtMins(e.attackDurationMin)}`).join("\n") || "-",
-        "",
-        "Clinical translation examples:",
-        `"ตาลาย มีแสงแวบ" -> visual aura with photopsia`,
-        `"ท้ายทอยตึง" -> occipital discomfort`,
-        `"ตาเบลอ" -> visual disturbance / blurred vision`,
-        "",
-        "Appointment/refill timeline:",
-        calendarLines
-      ];
-      document.getElementById("doctorReport").textContent = lines.join("\n");
+      const topProdrome = Object.entries(prodromeCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+      const firstDate = events.length ? dateText([...events].sort((a, b) => new Date(a.at) - new Date(b.at))[0].at) : "-";
+      const lastDate = events.length ? dateText([...events].sort((a, b) => new Date(b.at) - new Date(a.at))[0].at) : "-";
+      const medCounts = countBy(medLogs, m => m.medName || medName(m.medId));
+      const topMeds = Object.entries(medCounts).sort((a, b) => b[1] - a[1]).slice(0, 8);
+      const nurtecLast = medLogs.filter(m => m.medId === "nurtec75").sort((a, b) => new Date(b.at) - new Date(a.at))[0];
+      const upcoming = upcomingCalendar().slice(0, 6);
+      const visualSymptoms = attacks.filter(a => a.flashingLights || a.blurryVision || a.aura).length;
+      const nausea = attacks.filter(a => a.nausea).length;
+      const sideCounts = countBy(attacks, a => a.side || "not recorded");
+      const commonSide = Object.entries(sideCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "-";
+      const impression = [
+        topProdrome.length ? `Most frequent prodrome signal: ${topProdrome[0][0]} (${CLINICAL[topProdrome[0][0]] || "prodrome"}).` : "Prodrome pattern not enough data yet.",
+        light ? `${light}/${attacks.length || 0} attacks include aura/flashing lights.` : "No visual aura/flashing light attacks recorded yet.",
+        completedDurations.length ? `Completed attacks average ${avgDur}.` : "Attack resolution duration not enough data yet."
+      ].join(" ");
+      document.getElementById("doctorReport").innerHTML = `
+        <div class="reporthero">
+          <div class="reporttitle">Neurology Migraine Summary</div>
+          <div class="reportmeta">Generated ${esc(new Date().toLocaleString())} · Data range ${esc(firstDate)} – ${esc(lastDate)}</div>
+          <div class="clinicalnote">${esc(impression)}</div>
+        </div>
+
+        <div class="reportsection">
+          <h2>Key Numbers</h2>
+          <div class="metricgrid">
+            ${metric(attacks.length, "migraine attacks")}
+            ${metric(`${avgSeverity}/10`, "average severity")}
+            ${metric(avgDur, "average duration")}
+            ${metric(`${visualSymptoms}/${attacks.length || 0}`, "visual aura / disturbance")}
+            ${metric(`${wakeHeadache}/${sleepLogs.length || 0}`, "wake-up headache")}
+            ${metric(avgSleep, "average sleep")}
+            ${metric(medLogs.length, "medication logs")}
+            ${metric(nurtec, "Nurtec doses")}
+          </div>
+        </div>
+
+        <div class="reportsection">
+          <h2>Pattern Most Worth Reviewing</h2>
+          <div class="reportlist">
+            <div class="reportitem"><strong>Sequence to watch:</strong> prodrome / mood-cognitive-autonomic symptoms → visual symptoms → migraine attack → exhaustion or improvement.</div>
+            <div class="reportitem"><strong>Common headache side:</strong> ${esc(commonSide)}</div>
+            <div class="reportitem"><strong>Associated symptoms:</strong> visual disturbance ${visualSymptoms}/${attacks.length || 0}, nausea ${nausea}/${attacks.length || 0}</div>
+          </div>
+        </div>
+
+        <div class="reportsection">
+          <h2>Prodrome Signals</h2>
+          ${topProdrome.length ? `<div class="reporttable">${topProdrome.map(([name, count]) => `
+            <div class="reportrow">
+              <strong>${esc(name)}</strong>
+              <div class="reportcell">${esc(CLINICAL[name] || "prodrome symptom")}</div>
+              <div class="reportbadge">${count}x</div>
+            </div>`).join("")}</div>` : `<div class="empty">No prodrome logs yet</div>`}
+        </div>
+
+        <div class="reportsection">
+          <h2>Recent Migraine Attacks</h2>
+          ${sortedAttacks.length ? `<div class="reporttable">${sortedAttacks.slice(0, 8).map(a => `
+            <div class="reportrow">
+              <strong>${esc(dateText(a.at))} ${esc(timeText(a.at))}</strong>
+              <div class="reportcell">${esc(attackClinicalText(a))}</div>
+              <div class="reportbadge">${esc(a.severity ?? "-")}/10</div>
+            </div>`).join("")}</div>` : `<div class="empty">No migraine attacks recorded yet</div>`}
+        </div>
+
+        <div class="reportsection">
+          <h2>Medication Summary</h2>
+          <div class="reportlist">
+            <div class="reportitem"><strong>Nurtec:</strong> ${nurtec} dose(s). Last taken: ${nurtecLast ? `${esc(dateText(nurtecLast.at))} ${esc(timeText(nurtecLast.at))}` : "-"}. Next due: ${esc(nextNurtecDue())}</div>
+            <div class="reportitem"><strong>Naproxen schedule note:</strong> ${esc(naproxenPhase())}</div>
+          </div>
+          ${topMeds.length ? `<div class="reporttable" style="margin-top:8px">${topMeds.map(([name, count]) => `
+            <div class="reportrow two"><strong>${esc(name)}</strong><div class="reportcell">${count} logged dose(s)</div></div>`).join("")}</div>` : ""}
+        </div>
+
+        <div class="reportsection">
+          <h2>Sleep / Morning Headache</h2>
+          <div class="reportlist">
+            <div class="reportitem">Average sleep duration: <strong>${esc(avgSleep)}</strong></div>
+            <div class="reportitem">Wake-up headache: <strong>${wakeHeadache}/${sleepLogs.length || 0}</strong> mornings logged</div>
+          </div>
+        </div>
+
+        <div class="reportsection">
+          <h2>Medication Timing / Improvement</h2>
+          ${improved.length ? `<div class="reporttable">${improved.slice(0, 8).map(e => `
+            <div class="reportrow two">
+              <strong>${esc(dateText(e.at))} ${esc(timeText(e.at))}</strong>
+              <div class="reportcell">attack duration ${esc(fmtMins(e.attackDurationMin))}; medication → improvement ${esc(fmtMins(e.medToImprovementMin))}</div>
+            </div>`).join("")}</div>` : `<div class="empty">No improvement events recorded yet</div>`}
+        </div>
+
+        <div class="reportsection">
+          <h2>Upcoming Appointments / Refills</h2>
+          ${upcoming.length ? `<div class="reporttable">${upcoming.map(e => `
+            <div class="reportrow two"><strong>${esc(e.date)}</strong><div class="reportcell">${esc(e.label)}${e.note ? " · " + esc(e.note) : ""}</div></div>`).join("")}</div>` : `<div class="empty">No upcoming appointment/refill dates</div>`}
+        </div>
+
+        <div class="reportsection">
+          <h2>Clinical Translation Reference</h2>
+          <div class="reporttable">
+            ${translationRow("แสงแวบ / ตาลาย", "visual aura with photopsia")}
+            ${translationRow("ตาเบลอ", "visual disturbance / blurred vision")}
+            ${translationRow("คอแข็ง / ท้ายทอยตึง", "neck stiffness / occipital discomfort")}
+            ${translationRow("หงุดหงิด / นอย", "mood change, irritability, prodrome symptom")}
+            ${translationRow("สมองช้า / คิดไม่ออก", "cognitive slowing / brain fog")}
+          </div>
+          <div class="clinicalnote">Heat and noise exposure correlations are not directly logged yet.</div>
+        </div>`;
+    }
+    function metric(value, label) {
+      return `<div class="metric"><b>${esc(value)}</b><span>${esc(label)}</span></div>`;
+    }
+    function countBy(list, keyFn) {
+      return list.reduce((acc, item) => {
+        const key = keyFn(item) || "-";
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {});
+    }
+    function attackClinicalText(a) {
+      const parts = [];
+      if (a.side) parts.push(`side: ${a.side}`);
+      if (a.aura || a.flashingLights) parts.push("visual aura / photopsia");
+      if (a.blurryVision) parts.push("visual disturbance / blurred vision");
+      if (a.nausea) parts.push("nausea");
+      if (Number.isFinite(Number(a.prodromeToAttackMin))) parts.push(`prodrome→attack ${fmtMins(a.prodromeToAttackMin)}`);
+      return parts.join("; ") || "associated symptoms not recorded";
+    }
+    function translationRow(userText, clinicalText) {
+      return `<div class="reportrow two"><strong>${esc(userText)}</strong><div class="reportcell">${esc(clinicalText)}</div></div>`;
     }
     function renderBackupStatus() {
       const last = lastExportAt();
