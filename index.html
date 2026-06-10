@@ -94,18 +94,48 @@
     .medbtn.taken { border-color: rgba(97,211,148,.42); background: rgba(97,211,148,.12); }
     .medbtn.missed { border-color: rgba(255,116,116,.44); background: rgba(255,116,116,.12); }
 
-    .timeline { position: relative; margin-left: 4px; }
-    .timeline:before { content: ""; position: absolute; top: 8px; bottom: 8px; left: 62px; width: 2px; background: var(--line); }
-    .event { position: relative; display: grid; grid-template-columns: 52px 1fr; gap: 22px; margin-bottom: 10px; }
-    .time { color: var(--muted); font-size: 12px; text-align: right; padding-top: 13px; }
-    .eventcard { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; }
-    .eventcard:before { content: ""; position: absolute; left: 56px; top: 16px; width: 14px; height: 14px; border-radius: 50%; background: var(--panel); border: 2px solid var(--violet); }
-    .event.medication .eventcard:before { border-color: var(--yellow); }
-    .event.attack_start .eventcard:before { border-color: var(--pink); }
-    .event.improved .eventcard:before { border-color: var(--green); }
-    .event.sleep .eventcard:before { border-color: var(--blue); }
-    .event.calendar .eventcard:before { border-color: var(--yellow); }
-    .etitle { font-weight: 900; margin-bottom: 7px; }
+    .timeline { display: grid; gap: 16px; }
+    .dayblock { display: grid; gap: 9px; }
+    .dayhead { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 4px 2px 0; }
+    .daydate { font-weight: 950; font-size: 16px; }
+    .daycount { color: var(--muted); font-size: 12px; }
+    .event { display: grid; grid-template-columns: 68px minmax(0, 1fr); gap: 9px; align-items: stretch; }
+    .time {
+      align-self: stretch;
+      display: grid;
+      place-items: center;
+      min-height: 82px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      color: var(--text);
+      background: var(--panel2);
+      font-size: 16px;
+      font-weight: 950;
+      line-height: 1;
+    }
+    .eventcard {
+      min-width: 0;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--violet);
+      border-radius: var(--r);
+      padding: 12px;
+      display: grid;
+      gap: 9px;
+    }
+    .event.medication .eventcard { border-left-color: var(--yellow); background: linear-gradient(145deg, rgba(247,200,79,.11), var(--panel)); }
+    .event.attack_start .eventcard { border-left-color: var(--pink); background: linear-gradient(145deg, rgba(255,143,175,.14), var(--panel)); }
+    .event.prodrome .eventcard { border-left-color: var(--blue); background: linear-gradient(145deg, rgba(119,187,255,.12), var(--panel)); }
+    .event.improved .eventcard { border-left-color: var(--green); background: linear-gradient(145deg, rgba(97,211,148,.12), var(--panel)); }
+    .event.sleep .eventcard { border-left-color: var(--blue); }
+    .event.calendar .eventcard { border-left-color: var(--yellow); }
+    .eventhead { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 10px; align-items: center; }
+    .eventicon { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 12px; background: var(--panel2); font-size: 22px; }
+    .etitle { font-weight: 950; font-size: 17px; line-height: 1.15; overflow-wrap: anywhere; }
+    .etype { color: var(--muted); font-size: 11px; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; margin-top: 3px; }
+    .detailchips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .detailchip { background: rgba(255,255,255,.07); border: 1px solid var(--line); border-radius: 999px; padding: 6px 9px; color: var(--text); font-size: 13px; line-height: 1.15; overflow-wrap: anywhere; }
+    .gapnote { color: var(--muted); font-size: 12px; }
     .report { white-space: pre-wrap; line-height: 1.55; font-size: 14px; }
     .backup-actions { display: grid; gap: 10px; margin-top: 10px; }
     .backup-note { color: var(--muted); font-size: 13px; line-height: 1.45; margin-top: 10px; }
@@ -435,7 +465,7 @@
       const d = new Date(iso);
       return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
     }
-    function timeText(iso) { return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }
+    function timeText(iso) { return new Date(iso).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", hour12: false }); }
     function dateText(isoOrDate) { return new Date(isoOrDate).toLocaleDateString([], { month: "short", day: "numeric" }); }
     function esc(v) { return String(v ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[c]); }
     function minsBetween(a, b) { return Math.round((new Date(b) - new Date(a)) / 60000); }
@@ -763,28 +793,133 @@
       document.getElementById(target).innerHTML = list.length ? timeline(list.map(normalizeEvent)) : `<div class="empty">ยังไม่มีข้อมูล</div>`;
     }
     function normalizeEvent(e) {
-      if (e.title) return e;
-      if (e.type === "prodrome") return { type: e.type, at: e.at, title: "⚡ เริ่มรู้สึกแปลก", details: (e.symptoms || []).join(", ") };
-      if (e.type === "attack_start") return { type: e.type, at: e.at, title: "💥 เริ่มปวดหัว", details: `${e.side} · ${e.severity}/10${symptomText(e)}` };
-      if (e.type === "improved") return { type: e.type, at: e.at, title: "😌 ดีขึ้นแล้ว", details: `เหลือ ${e.painAfter}/10 · duration ${fmtMins(e.attackDurationMin)} · med→ดีขึ้น ${fmtMins(e.medToImprovementMin)}` };
-      if (e.type === "medication") return { type: e.type, at: e.at, title: `💊 ${e.medName}`, details: e.group || "" };
-      if (e.type === "sleep") return { type: e.type, at: e.at, title: "🌅 Sleep", details: `ตื่นมา: ${e.wakeHeadache} · sleep ${fmtMins(e.totalSleepMin)}` };
-      return { type: e.type, at: e.at, title: "event", details: "" };
+      const base = {
+        type: e.type || "event",
+        at: e.at || nowIso(),
+        title: e.title || "event",
+        icon: "•",
+        label: e.type || "event",
+        details: detailList(e.details)
+      };
+      if (e.type === "prodrome") return {
+        ...base,
+        title: "เริ่มรู้สึกแปลก",
+        icon: "⚡",
+        label: "prodrome",
+        details: detailList(e.symptoms)
+      };
+      if (e.type === "attack_start") return {
+        ...base,
+        title: "เริ่มปวดหัว",
+        icon: "💥",
+        label: "migraine attack",
+        details: [
+          e.side ? `ข้าง: ${e.side}` : "",
+          Number.isFinite(Number(e.severity)) ? `ปวด ${e.severity}/10` : "",
+          ...symptomList(e)
+        ].filter(Boolean)
+      };
+      if (e.type === "improved") return {
+        ...base,
+        title: "ดีขึ้นแล้ว",
+        icon: "😌",
+        label: "improved",
+        details: [
+          Number.isFinite(Number(e.painAfter)) ? `เหลือ ${e.painAfter}/10` : "",
+          e.attackDurationMin != null ? `ปวดนาน ${fmtMins(e.attackDurationMin)}` : "",
+          e.medToImprovementMin != null ? `ยา→ดีขึ้น ${fmtMins(e.medToImprovementMin)}` : ""
+        ].filter(Boolean)
+      };
+      if (e.type === "medication") return {
+        ...base,
+        title: e.medName || "กินยาแล้ว",
+        icon: "💊",
+        label: "medication",
+        details: [e.group, e.override ? "override" : ""].filter(Boolean)
+      };
+      if (e.type === "sleep") return {
+        ...base,
+        title: "Sleep / เช้า",
+        icon: "🌅",
+        label: "sleep",
+        details: [
+          e.wakeHeadache ? `ตื่นมา: ${e.wakeHeadache}` : "",
+          e.totalSleepMin != null ? `นอน ${fmtMins(e.totalSleepMin)}` : "",
+          e.napMinutes ? `งีบ ${fmtMins(e.napMinutes)}` : ""
+        ].filter(Boolean)
+      };
+      if (e.title) return {
+        ...base,
+        icon: iconForType(e.type),
+        label: labelForType(e.type),
+        details: detailList(e.details)
+      };
+      return base;
     }
     function timeline(items) {
-      return `<div class="timeline">${items.map(e => `
-        <div class="event ${esc(e.type)}">
-          <div class="time">${timeText(e.at)}</div>
-          <div class="eventcard"><div class="etitle">${esc(e.title)}</div>${e.details ? `<div class="mini">${esc(e.details)}</div>` : ""}<div class="mini">${dateText(e.at)}</div></div>
+      const groups = [];
+      items.forEach((item, index) => {
+        const key = dateKey(item.at);
+        let group = groups[groups.length - 1];
+        if (!group || group.key !== key) {
+          group = { key, items: [] };
+          groups.push(group);
+        }
+        const next = items[index + 1];
+        group.items.push({ ...item, gap: next && dateKey(next.at) === key ? gapText(next.at, item.at) : "" });
+      });
+      return `<div class="timeline">${groups.map(group => `
+        <div class="dayblock">
+          <div class="dayhead"><div class="daydate">${esc(dayLabel(group.key))}</div><div class="daycount">${group.items.length} events</div></div>
+          ${group.items.map(e => `
+            <div class="event ${esc(e.type)}">
+              <div class="time">${timeText(e.at)}</div>
+              <div class="eventcard">
+                <div class="eventhead">
+                  <div class="eventicon">${esc(e.icon || iconForType(e.type))}</div>
+                  <div><div class="etitle">${esc(e.title)}</div><div class="etype">${esc(e.label || labelForType(e.type))}</div></div>
+                </div>
+                ${e.details?.length ? `<div class="detailchips">${e.details.map(d => `<span class="detailchip">${esc(d)}</span>`).join("")}</div>` : ""}
+                ${e.gap ? `<div class="gapnote">ก่อนหน้านี้ ${esc(e.gap)}</div>` : ""}
+              </div>
+            </div>`).join("")}
         </div>`).join("")}</div>`;
     }
-    function symptomText(e) {
+    function detailList(value) {
+      if (!value) return [];
+      if (Array.isArray(value)) return value.map(v => String(v).trim()).filter(Boolean);
+      return String(value).split(/\s*[·,]\s*/).map(v => v.trim()).filter(Boolean);
+    }
+    function symptomList(e) {
       const arr = [];
       if (e.aura) arr.push("aura");
       if (e.flashingLights) arr.push("แสงแวบ");
       if (e.blurryVision) arr.push("ตาเบลอ");
       if (e.nausea) arr.push("คลื่นไส้");
+      return arr;
+    }
+    function symptomText(e) {
+      const arr = symptomList(e);
       return arr.length ? " · " + arr.join(", ") : "";
+    }
+    function iconForType(type) {
+      return ({ prodrome: "⚡", attack_start: "💥", improved: "😌", medication: "💊", sleep: "🌅", calendar: "📅" })[type] || "•";
+    }
+    function labelForType(type) {
+      return ({ prodrome: "prodrome", attack_start: "migraine attack", improved: "improved", medication: "medication", sleep: "sleep", calendar: "calendar" })[type] || "event";
+    }
+    function dayLabel(key) {
+      if (key === todayKey()) return "วันนี้";
+      const d = new Date(key + "T00:00:00");
+      return d.toLocaleDateString("th-TH", { weekday: "short", month: "short", day: "numeric" });
+    }
+    function gapText(fromIso, toIso) {
+      const mins = Math.round((new Date(toIso) - new Date(fromIso)) / 60000);
+      if (!Number.isFinite(mins) || mins <= 0) return "";
+      if (mins < 60) return `${mins} นาที`;
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      return m ? `${h} ชม. ${m} นาที` : `${h} ชม.`;
     }
 
     function renderReminders() {
@@ -811,7 +946,7 @@
         const date = e.date;
         const d = new Date(date + "T00:00:00");
         const days = Math.ceil((d - start) / 86400000);
-        return { ...e, date, days, label };
+        return { ...e, date, days, label: e.label };
       }).filter(e => e.days >= 0).sort((a, b) => a.days - b.days);
     }
     function renderCalendar() {
