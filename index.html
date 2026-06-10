@@ -396,6 +396,8 @@
       <div class="chips" id="severityChips"></div>
       <div class="label">มีไหม</div>
       <div class="chips" id="attackSymptomChips"></div>
+      <div class="label">trigger ก่อนหน้า</div>
+      <div class="chips" id="attackTriggerChips"></div>
       <button class="primary" id="saveAttack">บันทึกเริ่มปวด</button>
       <button class="secondary" data-close>ยกเลิก</button>
     </div>
@@ -500,6 +502,7 @@
       ["blurryVision", "ตาเบลอ"],
       ["nausea", "คลื่นไส้"]
     ];
+    const TRIGGERS = ["ไม่รู้", "แสง", "แดด", "ร้อน", "เสียงดัง", "จอ/คอม", "นอนน้อย", "เครียด/นอย", "กลิ่น", "เดินทาง", "กินข้าวช้า", "อากาศเปลี่ยน"];
     const WAKE_HEADACHE = ["ไม่ปวด", "ปวดนิดหน่อย", "ปวดปานกลาง", "ปวดมาก"];
     const CLINICAL = {
       "หาวบ่อย": "frequent yawning / prodrome",
@@ -513,6 +516,18 @@
       "จะอ้วก": "nausea / urge to vomit",
       "อยากกินของหวาน": "food craving / sweet craving",
       "อยากกินเค็ม": "food craving / salty craving",
+      "ไม่รู้": "unknown trigger",
+      "แสง": "light exposure",
+      "แดด": "sunlight exposure",
+      "ร้อน": "heat exposure",
+      "เสียงดัง": "noise exposure",
+      "จอ/คอม": "screen exposure",
+      "นอนน้อย": "sleep deprivation",
+      "เครียด/นอย": "stress / mood disturbance",
+      "กลิ่น": "odor exposure",
+      "เดินทาง": "travel / motion / routine disruption",
+      "กินข้าวช้า": "delayed meal",
+      "อากาศเปลี่ยน": "weather change",
       "แสงแวบ": "visual aura with photopsia",
       "ตาเบลอ": "visual disturbance / blurred vision",
       "ท้ายทอยตึง": "occipital discomfort"
@@ -527,6 +542,7 @@
     let selectedSide = "ทั้งสองข้าง";
     let selectedSeverity = 7;
     let selectedAttackSymptoms = new Set();
+    let selectedTriggers = new Set();
     let selectedImprovePain = 2;
     let selectedWakeHeadache = "ไม่ปวด";
 
@@ -755,10 +771,11 @@
         document.getElementById("prodromeChips").innerHTML = chipHtml(PRODROME, selectedProdrome);
       }
       if (id === "attackSheet") {
-        selectedSide = "ทั้งสองข้าง"; selectedSeverity = 7; selectedAttackSymptoms = new Set();
+        selectedSide = "ทั้งสองข้าง"; selectedSeverity = 7; selectedAttackSymptoms = new Set(); selectedTriggers = new Set();
         document.getElementById("sideChips").innerHTML = chipHtml(SIDES, selectedSide, "one");
         document.getElementById("severityChips").innerHTML = numbersHtml(selectedSeverity);
         document.getElementById("attackSymptomChips").innerHTML = chipHtml(ATTACK_SYMPTOMS, selectedAttackSymptoms);
+        document.getElementById("attackTriggerChips").innerHTML = chipHtml(TRIGGERS, selectedTriggers);
       }
       if (id === "improveSheet") {
         selectedImprovePain = 2;
@@ -965,7 +982,8 @@
         details: [
           e.side ? `ข้าง: ${e.side}` : "",
           Number.isFinite(Number(e.severity)) ? `ปวด ${e.severity}/10` : "",
-          ...symptomList(e)
+          ...symptomList(e),
+          ...detailList(e.triggers).map(t => `trigger: ${t}`)
         ].filter(Boolean)
       };
       if (e.type === "improved") return {
@@ -1132,6 +1150,9 @@
       const prodromeCounts = {};
       events.filter(e => e.type === "prodrome").forEach(e => (e.symptoms || []).forEach(s => prodromeCounts[s] = (prodromeCounts[s] || 0) + 1));
       const topProdrome = Object.entries(prodromeCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+      const triggerCounts = {};
+      attacks.forEach(a => detailList(a.triggers).forEach(t => triggerCounts[t] = (triggerCounts[t] || 0) + 1));
+      const topTriggers = Object.entries(triggerCounts).sort((a, b) => b[1] - a[1]).slice(0, 8);
       const firstDate = events.length ? dateText([...events].sort((a, b) => new Date(a.at) - new Date(b.at))[0].at) : "-";
       const lastDate = events.length ? dateText([...events].sort((a, b) => new Date(b.at) - new Date(a.at))[0].at) : "-";
       const medCounts = countBy(medLogs, m => m.medName || medName(m.medId));
@@ -1144,6 +1165,7 @@
       const commonSide = Object.entries(sideCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "-";
       const impression = [
         topProdrome.length ? `Most frequent prodrome signal: ${topProdrome[0][0]} (${CLINICAL[topProdrome[0][0]] || "prodrome"}).` : "Prodrome pattern not enough data yet.",
+        topTriggers.length ? `Most common reported trigger: ${topTriggers[0][0]} (${CLINICAL[topTriggers[0][0]] || "possible trigger"}).` : "Trigger data not enough yet.",
         light ? `${light}/${attacks.length || 0} attacks include aura/flashing lights.` : "No visual aura/flashing light attacks recorded yet.",
         completedDurations.length ? `Completed attacks average ${avgDur}.` : "Attack resolution duration not enough data yet."
       ].join(" ");
@@ -1175,6 +1197,16 @@
             <div class="reportitem"><strong>Common headache side:</strong> ${esc(commonSide)}</div>
             <div class="reportitem"><strong>Associated symptoms:</strong> visual disturbance ${visualSymptoms}/${attacks.length || 0}, nausea ${nausea}/${attacks.length || 0}</div>
           </div>
+        </div>
+
+        <div class="reportsection">
+          <h2>Reported Triggers</h2>
+          ${topTriggers.length ? `<div class="reporttable">${topTriggers.map(([name, count]) => `
+            <div class="reportrow">
+              <strong>${esc(name)}</strong>
+              <div class="reportcell">${esc(CLINICAL[name] || "possible migraine trigger")}</div>
+              <div class="reportbadge">${count}x</div>
+            </div>`).join("")}</div>` : `<div class="empty">No trigger data logged yet</div>`}
         </div>
 
         <div class="reportsection">
@@ -1239,7 +1271,7 @@
             ${translationRow("หงุดหงิด / นอย", "mood change, irritability, prodrome symptom")}
             ${translationRow("สมองช้า / คิดไม่ออก", "cognitive slowing / brain fog")}
           </div>
-          <div class="clinicalnote">Heat and noise exposure correlations are not directly logged yet.</div>
+          <div class="clinicalnote">Light, heat, noise, screen, sleep, stress, odor, travel, delayed meal, and weather triggers can now be logged at attack onset.</div>
         </div>`;
     }
     function metric(value, label) {
@@ -1258,6 +1290,8 @@
       if (a.aura || a.flashingLights) parts.push("visual aura / photopsia");
       if (a.blurryVision) parts.push("visual disturbance / blurred vision");
       if (a.nausea) parts.push("nausea");
+      const triggers = detailList(a.triggers);
+      if (triggers.length) parts.push(`reported trigger(s): ${triggers.map(t => `${t}${CLINICAL[t] ? " / " + CLINICAL[t] : ""}`).join(", ")}`);
       if (Number.isFinite(Number(a.prodromeToAttackMin))) parts.push(`prodrome→attack ${fmtMins(a.prodromeToAttackMin)}`);
       return parts.join("; ") || "associated symptoms not recorded";
     }
@@ -1322,6 +1356,17 @@
         const v = b.dataset.value; selectedAttackSymptoms.has(v) ? selectedAttackSymptoms.delete(v) : selectedAttackSymptoms.add(v);
         b.classList.toggle("on");
       };
+      document.getElementById("attackTriggerChips").onclick = e => {
+        const b = e.target.closest(".chip"); if (!b) return;
+        const v = b.dataset.value;
+        if (v === "ไม่รู้") {
+          selectedTriggers = selectedTriggers.has(v) ? new Set() : new Set([v]);
+        } else {
+          selectedTriggers.delete("ไม่รู้");
+          selectedTriggers.has(v) ? selectedTriggers.delete(v) : selectedTriggers.add(v);
+        }
+        document.getElementById("attackTriggerChips").innerHTML = chipHtml(TRIGGERS, selectedTriggers);
+      };
       document.getElementById("saveAttack").onclick = () => {
         const at = nowIso();
         const prodrome = lastBefore("prodrome", at);
@@ -1333,6 +1378,7 @@
           flashingLights: selectedAttackSymptoms.has("flashingLights"),
           blurryVision: selectedAttackSymptoms.has("blurryVision"),
           nausea: selectedAttackSymptoms.has("nausea"),
+          triggers: [...selectedTriggers],
           prodromeToAttackMin: prodrome ? minsBetween(prodrome.at, at) : null
         });
         closeSheets(); toast("บันทึกเริ่มปวดแล้ว");
