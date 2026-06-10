@@ -1,24 +1,29 @@
 # Migraine Journal
 
-A personal-first migraine journal for one user. It is optimized for logging during severe migraine: large buttons, dark mode, minimal typing, local-first storage, and fast medication/prodrome/attack capture.
+Personal migraine and sleep log PWA for one person. Optimized for fast iPhone logging during migraine symptoms.
 
-## Goals
+Live app:
 
-- One tap medication logging with automatic timestamps.
-- Prodrome and attack logging with large buttons.
-- Improvement logging with attack duration and medication-to-improvement timing.
-- Sleep tracking stored separately for future Apple Watch integration.
-- Local health calendar for doctor appointments and medication refill dates.
-- Neurologist report with clinical translation.
-- Manual Files/iCloud Drive backup and import for iPhone PWA use.
+https://afaitz19.github.io/migrainesleeplogs/
+
+Version: Version 2, updated 10-06-2026.
+
+## iPhone Setup
+
+1. Open the live app URL in Safari.
+2. Tap Share.
+3. Tap Add to Home Screen.
+4. Use the Home Screen icon like an app.
+
+Do not open the local `file://` HTML file on iPhone. iPhone Safari/PWA works much better from the GitHub Pages web URL.
 
 ## Core Flows
 
 - `วันนี้`: urgent actions and today's timeline.
-- `ยา`: 💊 กินยาแล้ว, missed meds, adherence, and today's med history.
-- `ไทม์ไลน์`: all migraine, sleep, and medication events.
-- `ปฏิทิน`: นัดหมอ and สั่งยา / รับยา.
-- `รายงาน`: neurologist summary.
+- `ยา`: medication logging, missed meds, adherence, and today's med history.
+- `ไทม์ไลน์`: graph-based migraine pattern view plus detailed event cards.
+- `ปฏิทิน`: doctor appointments and medication refill dates.
+- `รายงาน`: neurologist-readable clinical dashboard.
 
 ## Backup / Import
 
@@ -27,9 +32,7 @@ A personal-first migraine journal for one user. It is optimized for logging duri
 - Import uses an HTML `.json` file picker. The user must choose the backup file manually.
 - If local data already exists, the app asks whether to replace, merge, or cancel.
 - Imported data is copied into `localStorage`, so the app keeps working offline.
-- The app shows `ยังไม่ได้ backup วันนี้` if there has been no export in 24 hours.
-
-There is no server, login, or fake automatic iCloud sync. Browser/PWA file access on iPhone requires user selection.
+- There is no server, login, or fake automatic iCloud sync.
 
 ## Medication Schedule
 
@@ -39,10 +42,11 @@ There is no server, login, or fake automatic iCloud sync. Browser/PWA file acces
 - ก่อนนอน: Pregabalin 75 mg x 1, Amitriptyline 25 mg x 1, Flunarizine 5 mg x 1.
 
 Special rules:
+
 - Nurtec shows last taken and next scheduled dose automatically.
 - Naproxen has an editable start date. First 3 days are morning/evening; after that the UI shows every-12-hour timing.
 - Propranolol is morning and evening only.
 
-## Run
+## GitHub Pages
 
-Open `index.html` in a browser. Data is stored locally in `localStorage`.
+This repository includes a static `index.html`, `.nojekyll`, and a GitHub Actions Pages workflow. If the live URL does not work yet, open repository Settings, then Pages, and set the source to GitHub Actions.
