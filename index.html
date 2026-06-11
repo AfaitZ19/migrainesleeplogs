@@ -61,6 +61,67 @@
     }
 
     .quick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .emergencygrid { display: grid; gap: 10px; }
+    .attackhero {
+      width: 100%;
+      min-height: 120px;
+      border: 1px solid rgba(255,116,116,.55);
+      border-radius: 18px;
+      background: linear-gradient(145deg, rgba(255,116,116,.52), rgba(255,143,175,.26) 52%, var(--panel));
+      color: var(--text);
+      padding: 18px;
+      text-align: left;
+      cursor: pointer;
+      display: grid;
+      gap: 8px;
+      align-content: center;
+      box-shadow: 0 18px 36px rgba(255,116,116,.12);
+    }
+    .attackhero strong { font-size: 34px; line-height: 1.02; }
+    .attackhero small { color: var(--pink2); font-size: 15px; font-weight: 850; }
+    .secondarygrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+    .quicksmall {
+      min-height: 78px;
+      border: 1px solid var(--line);
+      border-radius: var(--r);
+      background: var(--panel);
+      color: var(--text);
+      padding: 11px 8px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      gap: 3px;
+      text-align: center;
+      font-weight: 950;
+    }
+    .quicksmall span { font-size: 25px; line-height: 1; }
+    .quicksmall small { display: block; color: var(--muted); font-size: 11px; font-weight: 750; }
+    .activeattack {
+      display: none;
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      border: 1px solid rgba(255,116,116,.45);
+      background: linear-gradient(145deg, rgba(255,116,116,.2), rgba(255,143,175,.08), var(--panel));
+      border-radius: var(--r);
+      padding: 12px;
+      margin-bottom: 10px;
+      gap: 10px;
+      box-shadow: 0 12px 22px rgba(0,0,0,.24);
+    }
+    .activeattack.on { display: grid; }
+    .activeattack strong { font-size: 18px; line-height: 1.15; }
+    .activeactions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .activeactions button {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      min-height: 52px;
+      font-weight: 950;
+      cursor: pointer;
+      color: var(--text);
+    }
+    .activeactions .better { background: rgba(97,211,148,.18); border-color: rgba(97,211,148,.36); }
+    .activeactions .worse { background: rgba(255,116,116,.18); border-color: rgba(255,116,116,.36); }
     .bigbtn {
       border: 1px solid var(--line);
       background: var(--panel);
@@ -246,7 +307,7 @@
     .backup-actions { display: grid; gap: 10px; margin-top: 10px; }
     .backup-note { color: var(--muted); font-size: 13px; line-height: 1.45; margin-top: 10px; }
 
-    nav { position: fixed; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); background: rgba(16,18,23,.96); border-top: 1px solid var(--line); backdrop-filter: blur(16px); }
+    nav { position: fixed; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); background: rgba(16,18,23,.96); border-top: 1px solid var(--line); backdrop-filter: blur(16px); }
     .navbtn { background: transparent; border: 0; color: var(--muted); border-radius: 11px; padding: 8px 2px; cursor: pointer; display: grid; place-items: center; gap: 2px; font-size: 10px; }
     .navbtn span { font-size: 19px; }
     .navbtn.on { color: var(--text); background: var(--panel2); }
@@ -272,6 +333,29 @@
       font-weight: 800;
     }
     .chip.on { border-color: var(--pink); background: rgba(255,143,175,.18); }
+    .severitygrid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    .severitygrid .chip { min-height: 68px; font-size: 23px; padding: 8px 4px; }
+    .chartgrid { display: grid; gap: 12px; }
+    .chartcard { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; }
+    .charthead { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+    .charttitle { font-size: 17px; font-weight: 950; }
+    .chartnote { color: var(--muted); font-size: 12px; text-align: right; }
+    .chartsvg { width: 100%; height: auto; display: block; overflow: visible; }
+    .charttap { cursor: pointer; }
+    .chartlabel { fill: var(--muted); font-size: 10px; font-weight: 800; }
+    .chartnum { fill: var(--text); font-size: 11px; font-weight: 950; }
+    .heatcell { cursor: pointer; stroke: rgba(255,255,255,.08); stroke-width: 1; }
+    .triggerrow { display: grid; grid-template-columns: minmax(92px, .9fr) minmax(0, 1.4fr) 42px; gap: 9px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); }
+    .triggerrow:first-child { border-top: 0; }
+    .triggername { font-weight: 950; overflow-wrap: anywhere; }
+    .triggerclinical { color: var(--muted); font-size: 11px; margin-top: 2px; }
+    .triggerbar { height: 16px; border-radius: 999px; background: rgba(255,255,255,.07); overflow: hidden; }
+    .triggerfill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--blue), var(--yellow), var(--red)); }
+    .triggerpct { color: var(--muted); font-size: 12px; text-align: right; }
+    .reportherogrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+    .herometric { border: 1px solid rgba(119,187,255,.22); background: var(--panel2); border-radius: 13px; padding: 12px; min-height: 92px; }
+    .herometric b { display: block; font-size: 30px; line-height: 1; margin-bottom: 8px; }
+    .herometric span { color: var(--muted); font-size: 12px; line-height: 1.25; }
     .primary, .secondary {
       width: 100%;
       border-radius: var(--r);
@@ -323,13 +407,21 @@
 
         <div id="reminders"></div>
 
-        <div class="quick">
-          <button class="bigbtn yellow wide" data-screen="meds"><span class="ico">💊</span><strong>กินยาแล้ว</strong><small>แตะชื่อยา = บันทึกทันที</small></button>
-          <button class="bigbtn violet" data-open="prodrome"><span class="ico">⚡</span><strong>เริ่มแปลก</strong><small>บันทึกอาการนำ</small></button>
-          <button class="bigbtn pink" data-open="attack"><span class="ico">💥</span><strong>เริ่มปวดหัว</strong><small>เลือกไม่กี่อย่าง</small></button>
-          <button class="bigbtn pink" id="worseQuick"><span class="ico">📈</span><strong>อาการหนักขึ้น</strong><small>ปวดเพิ่ม / อาการเพิ่ม</small></button>
-          <button class="bigbtn green" id="improveQuick"><span class="ico">😌</span><strong>ดีขึ้น/หายแล้ว</strong><small>เลือก 0 ถ้าหายปวด</small></button>
-          <button class="bigbtn blue" data-open="sleep"><span class="ico">🌅</span><strong>ตื่นมาปวดหัวไหม</strong><small>sleep log</small></button>
+        <div class="activeattack" id="activeAttackBanner">
+          <strong id="activeAttackText">🔴 กำลังปวดอยู่</strong>
+          <div class="activeactions">
+            <button class="better" id="activeImproveBtn">ดีขึ้น</button>
+            <button class="worse" id="activeWorseBtn">หนักขึ้น</button>
+          </div>
+        </div>
+
+        <div class="emergencygrid">
+          <button class="attackhero" id="emergencyAttackBtn"><strong>💥 ปวดหัวแล้ว</strong><small>แตะแล้วเลือกคะแนนปวดอย่างเดียว</small></button>
+          <div class="secondarygrid">
+            <button class="quicksmall violet" data-open="prodrome"><span>⚡</span>เริ่มแปลก<small>อาการนำ</small></button>
+            <button class="quicksmall yellow" data-screen="meds"><span>💊</span>กินยา<small>บันทึกทันที</small></button>
+            <button class="quicksmall blue" data-open="sleep"><span>🌅</span>ตอนเช้า<small>ตื่นมาปวด?</small></button>
+          </div>
         </div>
 
         <div class="label">วันนี้เกิดอะไรขึ้น</div>
@@ -360,6 +452,18 @@
         <div id="patternGraph"></div>
         <div class="label">รายละเอียด</div>
         <div id="allTimeline"></div>
+      </section>
+
+      <section id="graphs" class="screen">
+        <div class="top">
+          <div>
+            <h1>กราฟ</h1>
+            <div class="sub">มอง pattern แบบเร็ว ไม่ต้องอ่านเยอะ</div>
+          </div>
+        </div>
+        <div id="graphDashboard"></div>
+        <div class="label" id="graphTimelineLabel">ไทม์ไลน์จากกราฟ</div>
+        <div id="graphTimeline"></div>
       </section>
 
       <section id="calendar" class="screen">
@@ -401,6 +505,7 @@
     <nav>
       <button class="navbtn on" data-screen="today"><span>⚡</span>วันนี้</button>
       <button class="navbtn" data-screen="meds"><span>💊</span>ยา</button>
+      <button class="navbtn" data-screen="graphs"><span>📊</span>กราฟ</button>
       <button class="navbtn" data-screen="timeline"><span>🕰️</span>ไทม์ไลน์</button>
       <button class="navbtn" data-screen="calendar"><span>📅</span>ปฏิทิน</button>
       <button class="navbtn" data-screen="report"><span>🩺</span>รายงาน</button>
@@ -414,6 +519,15 @@
       <div class="chips" id="prodromeChips"></div>
       <button class="primary" id="saveProdrome">บันทึก</button>
       <button class="secondary" data-close>ยกเลิก</button>
+    </div>
+  </div>
+
+  <div class="sheetwrap" id="emergencyAttackSheet">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheethead"><div class="sheettitle">💥 ปวดกี่คะแนน</div><button class="x" data-close>×</button></div>
+      <div class="chips severitygrid" id="emergencySeverityChips"></div>
+      <div class="backup-note">แตะตัวเลขแล้วบันทึกทันที</div>
     </div>
   </div>
 
@@ -594,6 +708,7 @@
     let selectedWorsePain = 8;
     let selectedWorseSymptoms = new Set();
     let selectedWakeHeadache = "ไม่ปวด";
+    let graphFilter = { type: "recent", label: "90 วันล่าสุด" };
 
     function read(key, fallback) {
       try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); }
@@ -621,6 +736,47 @@
       if (mins == null || Number.isNaN(mins)) return "-";
       if (mins < 60) return `${mins}m`;
       return `${Math.floor(mins/60)}h ${mins % 60 ? mins % 60 + "m" : ""}`.trim();
+    }
+    function startOfDay(d) {
+      const x = new Date(d);
+      x.setHours(0, 0, 0, 0);
+      return x;
+    }
+    function addDays(d, days) {
+      const x = new Date(d);
+      x.setDate(x.getDate() + days);
+      return x;
+    }
+    function mondayOf(d) {
+      const x = startOfDay(d);
+      const day = (x.getDay() + 6) % 7;
+      x.setDate(x.getDate() - day);
+      return x;
+    }
+    function isoDay(d) { return dateKey(d.toISOString()); }
+    function severityColor(v) {
+      const n = Number(v || 0);
+      if (!n) return "rgba(255,255,255,.08)";
+      if (n <= 3) return "var(--blue)";
+      if (n <= 6) return "var(--yellow)";
+      return n >= 8 ? "var(--red)" : "var(--pink)";
+    }
+    function frequencyColor(v) {
+      const n = Number(v || 0);
+      if (!n) return "rgba(255,255,255,.1)";
+      if (n <= 3) return "var(--green)";
+      if (n <= 6) return "var(--yellow)";
+      return "var(--red)";
+    }
+    function attacksInRange(start, end) {
+      return events.filter(e => e.type === "attack_start" && new Date(e.at) >= start && new Date(e.at) < end);
+    }
+    function thisMonthAttacks() {
+      const now = new Date();
+      return events.filter(e => {
+        const d = new Date(e.at);
+        return e.type === "attack_start" && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+      });
     }
     function lastExportAt() { return localStorage.getItem(LAST_EXPORT_KEY) || ""; }
     function needsBackup() {
@@ -796,6 +952,18 @@
       const attack = activeAttack();
       return attack && dateKey(attack.at) === todayKey() ? attack : null;
     }
+    function renderActiveAttackBanner() {
+      const attack = activeAttack();
+      const banner = document.getElementById("activeAttackBanner");
+      if (!banner) return;
+      if (!attack) {
+        banner.classList.remove("on");
+        return;
+      }
+      const mins = Math.max(0, minsBetween(attack.at, nowIso()));
+      document.getElementById("activeAttackText").textContent = `🔴 กำลังปวดอยู่ · ${fmtMins(mins)} แล้ว`;
+      banner.classList.add("on");
+    }
     function lastBefore(type, iso) {
       return events
         .filter(e => e.type === type && new Date(e.at) <= new Date(iso))
@@ -895,6 +1063,9 @@
       if (id === "prodromeSheet") {
         selectedProdrome = new Set();
         document.getElementById("prodromeChips").innerHTML = chipHtml(PRODROME, selectedProdrome);
+      }
+      if (id === "emergencyAttackSheet") {
+        document.getElementById("emergencySeverityChips").innerHTML = numbersHtml(null);
       }
       if (id === "attackSheet") {
         selectedSide = "ทั้งสองข้าง"; selectedSeverity = 7; selectedAttackSymptoms = new Set(); selectedTriggers = new Set();
@@ -1038,6 +1209,127 @@
           </div>
           ${days.map(graphDay).join("")}
         </div>` : `<div class="empty">ยังไม่มีข้อมูลสำหรับกราฟ</div>`;
+    }
+    function weeklyAttackBuckets() {
+      const start = mondayOf(addDays(new Date(), -84));
+      return Array.from({ length: 13 }, (_, i) => {
+        const from = addDays(start, i * 7);
+        const to = addDays(from, 7);
+        const attacks = attacksInRange(from, to);
+        const severities = attacks.map(a => Number(a.severity)).filter(Number.isFinite);
+        const avgSeverity = severities.length ? severities.reduce((s, v) => s + v, 0) / severities.length : 0;
+        return { from, to, key: isoDay(from), label: `${from.getDate()}/${from.getMonth() + 1}`, count: attacks.length, avgSeverity };
+      });
+    }
+    function frequencySvg(idPrefix = "freq") {
+      const buckets = weeklyAttackBuckets();
+      const max = Math.max(1, ...buckets.map(b => b.count));
+      const barW = 20, gap = 5, base = 128;
+      const bars = buckets.map((b, i) => {
+        const x = 24 + i * (barW + gap);
+        const bh = Math.max(3, (b.count / max) * 92);
+        const y = base - bh;
+        return `<g class="charttap" data-graph-week="${esc(b.key)}" role="button" tabindex="0">
+          <rect x="${x}" y="${y}" width="${barW}" height="${bh}" rx="5" fill="${frequencyColor(b.avgSeverity)}"></rect>
+          <text class="chartnum" x="${x + barW / 2}" y="${y - 5}" text-anchor="middle">${b.count || ""}</text>
+          <text class="chartlabel" x="${x + barW / 2}" y="150" text-anchor="middle">${esc(b.label)}</text>
+        </g>`;
+      }).join("");
+      return `<svg class="chartsvg" id="${esc(idPrefix)}Chart" viewBox="0 0 360 170" aria-label="weekly migraine frequency">
+        <line x1="18" y1="${base}" x2="348" y2="${base}" stroke="rgba(255,255,255,.18)" />
+        ${bars}
+      </svg>`;
+    }
+    function heatmapSvg() {
+      const today = startOfDay(new Date());
+      const start = mondayOf(addDays(today, -89));
+      const days = Math.ceil((today - start) / 86400000) + 1;
+      const weeks = Math.ceil(days / 7);
+      const cell = 22, gap = 4, left = 28, top = 18;
+      const byDay = {};
+      events.filter(e => e.type === "attack_start").forEach(e => {
+        const key = dateKey(e.at);
+        byDay[key] = Math.max(byDay[key] || 0, Number(e.severity || 0));
+      });
+      const cells = [];
+      for (let i = 0; i < weeks * 7; i++) {
+        const d = addDays(start, i);
+        if (d > today) continue;
+        const key = isoDay(d);
+        const x = left + (i % 7) * (cell + gap);
+        const y = top + Math.floor(i / 7) * (cell + gap);
+        cells.push(`<rect class="heatcell" data-graph-day="${esc(key)}" x="${x}" y="${y}" width="${cell}" height="${cell}" rx="5" fill="${severityColor(byDay[key])}"><title>${esc(key)} severity ${byDay[key] || 0}</title></rect>`);
+      }
+      const labels = ["จ", "อ", "พ", "พฤ", "ศ", "ส", "อา"].map((d, i) => `<text class="chartlabel" x="${left + i * (cell + gap) + cell / 2}" y="11" text-anchor="middle">${d}</text>`).join("");
+      return `<svg class="chartsvg" viewBox="0 0 220 ${top + weeks * (cell + gap) + 8}" aria-label="severity heatmap">${labels}${cells.join("")}</svg>`;
+    }
+    function triggerRankingHtml() {
+      const attacks = events.filter(e => e.type === "attack_start");
+      const counts = {};
+      attacks.forEach(a => detailList(a.triggers).forEach(t => counts[t] = (counts[t] || 0) + 1));
+      const rows = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+      if (!rows.length) return `<div class="empty">ยังไม่มี trigger data</div>`;
+      return rows.map(([name, count]) => {
+        const pct = attacks.length ? Math.round((count / attacks.length) * 100) : 0;
+        return `<div class="triggerrow">
+          <div><div class="triggername">${esc(name)}</div><div class="triggerclinical">${esc(CLINICAL[name] || "possible migraine trigger")}</div></div>
+          <div class="triggerbar"><div class="triggerfill" style="width:${Math.max(4, pct)}%"></div></div>
+          <div class="triggerpct">${pct}%</div>
+        </div>`;
+      }).join("");
+    }
+    function timeOfDaySvg() {
+      const hours = Array.from({ length: 24 }, () => 0);
+      events.filter(e => e.type === "attack_start").forEach(e => hours[new Date(e.at).getHours()]++);
+      const max = Math.max(1, ...hours);
+      const bars = hours.map((count, hour) => {
+        const x = 16 + hour * 13;
+        const h = count ? Math.max(4, (count / max) * 76) : 2;
+        const y = 98 - h;
+        const label = hour % 6 === 0 ? `<text class="chartlabel" x="${x + 4}" y="118" text-anchor="middle">${hour}</text>` : "";
+        return `<rect x="${x}" y="${y}" width="8" height="${h}" rx="3" fill="${count ? "var(--pink)" : "rgba(255,255,255,.08)"}"><title>${hour}:00 ${count} attacks</title></rect>${label}`;
+      }).join("");
+      return `<svg class="chartsvg" viewBox="0 0 340 128" aria-label="time of day distribution">
+        <line x1="12" y1="98" x2="328" y2="98" stroke="rgba(255,255,255,.18)" />
+        ${bars}
+      </svg>`;
+    }
+    function renderGraphDashboard() {
+      document.getElementById("graphDashboard").innerHTML = `
+        <div class="chartgrid">
+          <div class="chartcard">
+            <div class="charthead"><div class="charttitle">จำนวนครั้งต่อสัปดาห์</div><div class="chartnote">90 วันล่าสุด · แตะแท่งเพื่อกรอง</div></div>
+            ${frequencySvg("mainFreq")}
+          </div>
+          <div class="chartcard">
+            <div class="charthead"><div class="charttitle">Severity heatmap</div><div class="chartnote">แตะช่องเพื่อดูวันนั้น</div></div>
+            ${heatmapSvg()}
+          </div>
+          <div class="chartcard">
+            <div class="charthead"><div class="charttitle">Trigger ที่เจอบ่อย</div><div class="chartnote">% จาก attack ทั้งหมด</div></div>
+            ${triggerRankingHtml()}
+          </div>
+          <div class="chartcard">
+            <div class="charthead"><div class="charttitle">ช่วงเวลาที่เริ่มปวด</div><div class="chartnote">แยกตามชั่วโมง</div></div>
+            ${timeOfDaySvg()}
+          </div>
+        </div>`;
+      renderGraphTimeline();
+    }
+    function renderGraphTimeline() {
+      let list = sorted(events);
+      if (graphFilter.type === "week") {
+        const start = new Date(graphFilter.key + "T00:00:00");
+        const end = addDays(start, 7);
+        list = list.filter(e => new Date(e.at) >= start && new Date(e.at) < end);
+      } else if (graphFilter.type === "day") {
+        list = list.filter(e => dateKey(e.at) === graphFilter.key);
+      } else {
+        const start = addDays(new Date(), -90);
+        list = list.filter(e => new Date(e.at) >= start);
+      }
+      document.getElementById("graphTimelineLabel").textContent = `ไทม์ไลน์: ${graphFilter.label}`;
+      renderTimeline("graphTimeline", list);
     }
     function legendItem(type, text) {
       return `<span class="legenditem"><span class="legenddot ${esc(type)}"></span>${esc(text)}</span>`;
@@ -1317,6 +1609,8 @@
       const nausea = attacks.filter(a => a.nausea).length;
       const sideCounts = countBy(attacks, a => a.side || "not recorded");
       const commonSide = Object.entries(sideCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "-";
+      const attacksThisMonth = thisMonthAttacks().length;
+      const mostCommonTrigger = topTriggers[0]?.[0] || "-";
       const impression = [
         topProdrome.length ? `Most frequent prodrome signal: ${topProdrome[0][0]} (${CLINICAL[topProdrome[0][0]] || "prodrome"}).` : "Prodrome pattern not enough data yet.",
         topTriggers.length ? `Most common reported trigger: ${topTriggers[0][0]} (${CLINICAL[topTriggers[0][0]] || "possible trigger"}).` : "Trigger data not enough yet.",
@@ -1324,6 +1618,20 @@
         completedDurations.length ? `Completed attacks average ${avgDur}.` : "Attack resolution duration not enough data yet."
       ].join(" ");
       document.getElementById("doctorReport").innerHTML = `
+        <div class="reportherogrid">
+          ${heroMetric(attacksThisMonth, "attacks this month")}
+          ${heroMetric(`${avgSeverity}/10`, "average severity")}
+          ${heroMetric(mostCommonTrigger, "most common trigger")}
+          ${heroMetric(avgDur, "average attack duration")}
+        </div>
+
+        <button class="primary" id="shareReportTextBtn">Share as Text</button>
+
+        <div class="reportsection">
+          <h2>90-Day Attack Frequency</h2>
+          <div class="chartcard">${frequencySvg("reportFreq")}</div>
+        </div>
+
         <div class="reporthero">
           <div class="reporttitle">Neurology Migraine Summary</div>
           <div class="reportmeta">${esc(APP_VERSION_LABEL)} · Generated ${esc(new Date().toLocaleString())} · Data range ${esc(firstDate)} – ${esc(lastDate)}</div>
@@ -1438,9 +1746,60 @@
           </div>
           <div class="clinicalnote">Light, heat, noise, screen, sleep, stress, odor, travel, delayed meal, and weather triggers can now be logged at attack onset.</div>
         </div>`;
+      document.getElementById("shareReportTextBtn").onclick = shareReportText;
+    }
+    function heroMetric(value, label) {
+      return `<div class="herometric"><b>${esc(value)}</b><span>${esc(label)}</span></div>`;
     }
     function metric(value, label) {
       return `<div class="metric"><b>${esc(value)}</b><span>${esc(label)}</span></div>`;
+    }
+    function clinicalSummaryText() {
+      const attacks = events.filter(e => e.type === "attack_start");
+      const improved = events.filter(e => e.type === "improved");
+      const monthCount = thisMonthAttacks().length;
+      const avgSeverity = attacks.length ? (attacks.reduce((s, a) => s + Number(a.severity || 0), 0) / attacks.length).toFixed(1) : "-";
+      const durations = improved.map(e => e.attackDurationMin).filter(v => Number.isFinite(Number(v)));
+      const avgDur = durations.length ? fmtMins(Math.round(durations.reduce((s, v) => s + Number(v), 0) / durations.length)) : "-";
+      const triggerCounts = {};
+      attacks.forEach(a => detailList(a.triggers).forEach(t => triggerCounts[t] = (triggerCounts[t] || 0) + 1));
+      const topTriggers = Object.entries(triggerCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      const visual = attacks.filter(a => a.aura || a.flashingLights || a.blurryVision).length;
+      const nausea = attacks.filter(a => a.nausea).length;
+      const wakeHeadache = sleepLogs.filter(s => s.wakeHeadache && s.wakeHeadache !== "ไม่ปวด").length;
+      const nurtec = medLogs.filter(m => m.medId === "nurtec75").length;
+      const recent = [...attacks].sort((a, b) => new Date(b.at) - new Date(a.at)).slice(0, 5);
+      return [
+        "Neurology Migraine Summary",
+        `${APP_VERSION_LABEL}`,
+        `Generated: ${new Date().toLocaleString()}`,
+        "",
+        `Attacks this month: ${monthCount}`,
+        `Total logged migraine attacks: ${attacks.length}`,
+        `Average severity: ${avgSeverity}/10`,
+        `Average completed attack duration: ${avgDur}`,
+        `Visual aura/visual disturbance: ${visual}/${attacks.length || 0}`,
+        `Nausea: ${nausea}/${attacks.length || 0}`,
+        `Wake-up headache mornings: ${wakeHeadache}/${sleepLogs.length || 0}`,
+        `Nurtec doses logged: ${nurtec}`,
+        "",
+        "Top reported triggers:",
+        topTriggers.length ? topTriggers.map(([name, count]) => `- ${name} / ${CLINICAL[name] || "possible migraine trigger"}: ${count}`).join("\n") : "- Not enough trigger data",
+        "",
+        "Recent attacks:",
+        recent.length ? recent.map(a => `- ${dateText(a.at)} ${timeText(a.at)} severity ${a.severity ?? "-"}; ${attackClinicalText(a)}`).join("\n") : "- No attacks recorded",
+        "",
+        "Pattern to review: prodrome or mood/cognitive/autonomic symptoms may precede visual symptoms and migraine attack, followed by exhaustion or improvement."
+      ].join("\n");
+    }
+    async function shareReportText() {
+      const text = clinicalSummaryText();
+      try {
+        await navigator.clipboard.writeText(text);
+        toast("คัดลอก report แล้ว");
+      } catch {
+        prompt("Copy report text", text);
+      }
     }
     function countBy(list, keyFn) {
       return list.reduce((acc, item) => {
@@ -1478,12 +1837,11 @@
       renderTimeline("todayTimeline", todayEvents);
       const allEvents = sorted(events);
       renderPatternGraph("patternGraph", allEvents);
+      renderGraphDashboard();
       renderTimeline("allTimeline", allEvents);
       renderReport();
       renderBackupStatus();
-      const hasActiveAttack = activeAttack();
-      document.getElementById("improveQuick").style.opacity = hasActiveAttack ? "1" : ".55";
-      document.getElementById("worseQuick").style.opacity = hasActiveAttack ? "1" : ".55";
+      renderActiveAttackBanner();
     }
 
     function setup() {
@@ -1497,15 +1855,49 @@
         e.stopPropagation();
         handleTimelineAction(action);
       });
-      document.getElementById("improveQuick").onclick = () => activeAttack() ? openSheet("improveSheet") : toast("ยังไม่มี attack ที่ active");
+      document.getElementById("emergencyAttackBtn").onclick = () => openSheet("emergencyAttackSheet");
+      document.getElementById("activeImproveBtn").onclick = () => activeAttack() ? openSheet("improveSheet") : toast("ยังไม่มี attack ที่ active");
+      document.getElementById("activeWorseBtn").onclick = () => activeAttack() ? openSheet("worseSheet") : toast("ยังไม่มี attack ที่ active");
       document.getElementById("exportDataBtn").onclick = exportBackup;
       document.getElementById("importDataBtn").onclick = () => document.getElementById("importFileInput").click();
       document.getElementById("importFileInput").onchange = e => {
         importBackupFile(e.target.files?.[0]);
         e.target.value = "";
       };
-      document.getElementById("worseQuick").onclick = () => activeAttack() ? openSheet("worseSheet") : toast("ยังไม่มี attack ที่ active");
-
+      document.getElementById("emergencySeverityChips").onclick = e => {
+        const b = e.target.closest(".chip"); if (!b) return;
+        const severity = Number(b.dataset.value);
+        const at = nowIso();
+        const prodrome = lastBefore("prodrome", at);
+        addEvent({
+          type: "attack_start",
+          side: "",
+          severity,
+          aura: false,
+          flashingLights: false,
+          blurryVision: false,
+          nausea: false,
+          triggers: [],
+          prodromeToAttackMin: prodrome ? minsBetween(prodrome.at, at) : null
+        });
+        closeSheets();
+        toast(`บันทึกปวด ${severity}/10`);
+      };
+      document.addEventListener("click", e => {
+        const week = e.target.closest("[data-graph-week]");
+        const day = e.target.closest("[data-graph-day]");
+        if (!week && !day) return;
+        if (week) {
+          const start = new Date(week.dataset.graphWeek + "T00:00:00");
+          const end = addDays(start, 6);
+          graphFilter = { type: "week", key: week.dataset.graphWeek, label: `${dateText(start)} - ${dateText(end)}` };
+        } else {
+          graphFilter = { type: "day", key: day.dataset.graphDay, label: new Date(day.dataset.graphDay + "T00:00:00").toLocaleDateString("th-TH", { weekday: "long", month: "short", day: "numeric" }) };
+        }
+        showScreen("graphs");
+        renderGraphTimeline();
+        document.getElementById("graphTimeline").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
       document.getElementById("prodromeChips").onclick = e => {
         const b = e.target.closest(".chip"); if (!b) return;
         const v = b.dataset.value; selectedProdrome.has(v) ? selectedProdrome.delete(v) : selectedProdrome.add(v);
