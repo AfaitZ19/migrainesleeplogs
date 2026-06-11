@@ -113,6 +113,24 @@
     .quicksmall span { font-size: 25px; line-height: 1; }
     .quicksmall small { display: block; color: var(--muted); font-size: 11px; font-weight: 750; }
     .quicksmall.red { background: linear-gradient(145deg, rgba(255,116,116,.2), var(--panel)); border-color: rgba(255,116,116,.38); }
+    .triggerquick {
+      width: 100%;
+      min-height: 64px;
+      border: 1px solid rgba(247,200,79,.36);
+      border-radius: var(--r);
+      background: linear-gradient(145deg, rgba(247,200,79,.17), var(--panel));
+      color: var(--text);
+      padding: 12px;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-weight: 950;
+    }
+    .triggerquick span { font-size: 26px; }
+    .triggerquick small { display: block; color: var(--muted); font-size: 12px; font-weight: 750; margin-top: 2px; }
     .activeattack {
       display: none;
       position: sticky;
@@ -486,6 +504,11 @@
             <button class="quicksmall blue" data-open="sleep"><span>🌅</span>ตอนเช้า<small>ตื่นมาปวด?</small></button>
             <button class="quicksmall red" data-open="hr"><span>❤️</span>HR สูง<small>BPM</small></button>
           </div>
+          <button class="triggerquick" id="quickTriggerBtn" type="button">
+            <span>🎯</span>
+            <strong>Trigger</strong>
+            <small>เติมสาเหตุให้ migraine ล่าสุด</small>
+          </button>
         </div>
 
         <div class="label">วันนี้เกิดอะไรขึ้น</div>
@@ -755,6 +778,8 @@
         morningSub: "Wake headache?",
         hrShort: "High HR",
         hrSub: "BPM",
+        triggerShort: "Trigger",
+        triggerSub: "add to latest migraine",
         todayTimeline: "Today's events",
         medsTitle: "💊 Medications",
         medsSubTitle: "Tap medication name = save exact time",
@@ -860,6 +885,8 @@
         morningSub: "ตื่นมาปวด?",
         hrShort: "HR สูง",
         hrSub: "BPM",
+        triggerShort: "Trigger",
+        triggerSub: "เติมสาเหตุให้ migraine ล่าสุด",
         todayTimeline: "วันนี้เกิดอะไรขึ้น",
         medsTitle: "💊 กินยาแล้ว",
         medsSubTitle: "แตะชื่อยา = บันทึกเวลาอัตโนมัติ",
@@ -2599,6 +2626,7 @@
       setHtml('[data-screen="meds"].quicksmall', `<span>💊</span>${t("medsShort")}<small>${t("medsSub")}</small>`);
       setHtml('[data-open="sleep"].quicksmall', `<span>🌅</span>${t("morningShort")}<small>${t("morningSub")}</small>`);
       setHtml('[data-open="hr"].quicksmall', `<span>❤️</span>${t("hrShort")}<small>${t("hrSub")}</small>`);
+      setHtml("#quickTriggerBtn", `<span>🎯</span><strong>${t("triggerShort")}</strong><small>${t("triggerSub")}</small>`);
       setText("#today .label", t("todayTimeline"));
       setText("#meds .label", t("medHistory"));
       setText("#timeline .label", t("patternGraph"));
@@ -2714,6 +2742,11 @@
       document.getElementById("activeImproveBtn").onclick = () => activeAttack() ? openSheet("improveSheet") : toast(t("activeMissing"));
       document.getElementById("activeWorseBtn").onclick = () => activeAttack() ? openSheet("worseSheet") : toast(t("activeMissing"));
       document.getElementById("activeTriggerBtn").onclick = () => activeAttack() ? openTriggerEditor(activeAttack().id) : toast(t("activeMissing"));
+      document.getElementById("quickTriggerBtn").onclick = () => {
+        const attack = activeAttack() || latestAttackStart();
+        if (!attack) return toast(currentLang === "en" ? "Log migraine first" : "บันทึกปวดหัวก่อน");
+        openTriggerEditor(attack.id);
+      };
       document.getElementById("exportDataBtn").onclick = exportBackup;
       document.getElementById("importDataBtn").onclick = () => document.getElementById("importFileInput").click();
       document.getElementById("importFileInput").onchange = e => {
