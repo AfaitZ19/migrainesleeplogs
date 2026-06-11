@@ -149,6 +149,19 @@
     .detailchips { display: flex; flex-wrap: wrap; gap: 6px; }
     .detailchip { background: rgba(255,255,255,.07); border: 1px solid var(--line); border-radius: 999px; padding: 6px 9px; color: var(--text); font-size: 13px; line-height: 1.15; overflow-wrap: anywhere; }
     .gapnote { color: var(--muted); font-size: 12px; }
+    .eventnote { border-left: 3px solid var(--yellow); padding: 7px 9px; border-radius: 8px; background: rgba(247,200,79,.08); color: var(--text); font-size: 13px; overflow-wrap: anywhere; }
+    .eventactions { display: flex; gap: 7px; flex-wrap: wrap; }
+    .eventaction {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.055);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .eventaction.danger { color: var(--red); border-color: rgba(255,116,116,.34); background: rgba(255,116,116,.08); }
     .graphwrap { display: grid; gap: 12px; }
     .legend { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 2px; }
     .legenditem { display: inline-flex; align-items: center; gap: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 7px 10px; color: var(--muted); font-size: 12px; }
@@ -668,6 +681,78 @@
       write(EVENT_KEY, events);
       render();
     }
+    function findMatchingMedLog(item) {
+      return medLogs.find(m => m.id === item.id)
+        || medLogs.find(m => m.at === item.at && (!item.medId || m.medId === item.medId))
+        || null;
+    }
+    function findMatchingMedicationEvent(item, medLog) {
+      return events.find(e => e.id === item.id)
+        || events.find(e => e.type === "medication" && e.at === (medLog?.at || item.at) && (!item.medId || e.medId === item.medId))
+        || null;
+    }
+    function deleteTimelineItem(item) {
+      if (!confirm("ลบรายการนี้ใช่ไหม?\nเหมาะสำหรับกดผิดหรือกดซ้ำ")) return;
+      if (item.source === "medLog") {
+        const medLog = findMatchingMedLog(item);
+        medLogs = medLogs.filter(m => m.id !== item.id && !(medLog && m.id === medLog.id));
+        events = events.filter(e => !(e.type === "medication" && medLog && e.at === medLog.at && e.medId === medLog.medId));
+      } else {
+        const ev = events.find(e => e.id === item.id);
+        events = events.filter(e => e.id !== item.id);
+        if (ev?.type === "medication") {
+          medLogs = medLogs.filter(m => !(m.at === ev.at && (!ev.medId || m.medId === ev.medId)));
+        }
+        if (ev?.type === "sleep") {
+          sleepLogs = sleepLogs.filter(s => s.id !== ev.id && s.at !== ev.at);
+        }
+      }
+      writeAllStores();
+      toast("ลบแล้ว");
+      render();
+    }
+    function noteTimelineItem(item) {
+      const current = currentTimelineNote(item);
+      const note = prompt("โน้ตรายการนี้", current || "");
+      if (note == null) return;
+      const clean = note.trim();
+      if (item.source === "medLog") {
+        const medLog = findMatchingMedLog(item);
+        if (medLog) medLog.note = clean;
+        const ev = findMatchingMedicationEvent(item, medLog);
+        if (ev) ev.note = clean;
+      } else {
+        const ev = events.find(e => e.id === item.id);
+        if (ev) {
+          ev.note = clean;
+          if (ev.type === "medication") {
+            const medLog = findMatchingMedLog({ ...item, at: ev.at, medId: ev.medId });
+            if (medLog) medLog.note = clean;
+          }
+          if (ev.type === "sleep") {
+            const sleep = sleepLogs.find(s => s.id === ev.id || s.at === ev.at);
+            if (sleep) sleep.note = clean;
+          }
+        }
+      }
+      writeAllStores();
+      toast(clean ? "เพิ่มโน้ตแล้ว" : "ลบโน้ตแล้ว");
+      render();
+    }
+    function currentTimelineNote(item) {
+      if (item.source === "medLog") return findMatchingMedLog(item)?.note || "";
+      return events.find(e => e.id === item.id)?.note || "";
+    }
+    function handleTimelineAction(button) {
+      const item = {
+        source: button.dataset.source || "event",
+        id: button.dataset.id || "",
+        at: button.dataset.at || "",
+        medId: button.dataset.med || ""
+      };
+      if (button.dataset.eventAction === "delete") deleteTimelineItem(item);
+      if (button.dataset.eventAction === "note") noteTimelineItem(item);
+    }
     function sorted(list, field = "at") { return [...list].sort((a, b) => new Date(b[field]) - new Date(a[field])); }
     function todayMedLogs() { return medLogs.filter(l => l.date === todayKey()); }
     function medTakenToday(id) { return todayMedLogs().filter(l => l.medId === id); }
@@ -902,7 +987,7 @@
         };
       });
       const today = sorted(todayMedLogs());
-      document.getElementById("medHistory").innerHTML = today.length ? timeline(today.map(m => ({ type: "medication", at: m.at, title: `💊 ${m.medName}`, details: `${m.group}${m.override ? " · override" : ""}` }))) : `<div class="empty">ยังไม่ได้บันทึกยา today</div>`;
+      document.getElementById("medHistory").innerHTML = today.length ? timeline(today.map(m => ({ id: m.id, source: "medLog", type: "medication", at: m.at, medId: m.medId, title: `💊 ${m.medName}`, details: `${m.group}${m.override ? " · override" : ""}`, note: m.note }))) : `<div class="empty">ยังไม่ได้บันทึกยา today</div>`;
     }
 
     function renderTimeline(target, list) {
@@ -976,12 +1061,16 @@
     }
     function normalizeEvent(e) {
       const base = {
+        id: e.id || "",
+        source: e.source || "event",
         type: e.type || "event",
         at: e.at || nowIso(),
         title: e.title || "event",
         icon: "•",
         label: e.type || "event",
-        details: detailList(e.details)
+        details: detailList(e.details),
+        note: e.note || "",
+        medId: e.medId || ""
       };
       if (e.type === "prodrome") return {
         ...base,
@@ -1063,7 +1152,12 @@
                   <div><div class="etitle">${esc(e.title)}</div><div class="etype">${esc(e.label || labelForType(e.type))}</div></div>
                 </div>
                 ${detailList(e.details).length ? `<div class="detailchips">${detailList(e.details).map(d => `<span class="detailchip">${esc(d)}</span>`).join("")}</div>` : ""}
+                ${e.note ? `<div class="eventnote">${esc(e.note)}</div>` : ""}
                 ${e.gap ? `<div class="gapnote">ก่อนหน้านี้ ${esc(e.gap)}</div>` : ""}
+                ${e.id ? `<div class="eventactions">
+                  <button class="eventaction" data-event-action="note" data-source="${esc(e.source || "event")}" data-id="${esc(e.id)}" data-at="${esc(e.at)}" data-med="${esc(e.medId || "")}">โน้ต</button>
+                  <button class="eventaction danger" data-event-action="delete" data-source="${esc(e.source || "event")}" data-id="${esc(e.id)}" data-at="${esc(e.at)}" data-med="${esc(e.medId || "")}">ลบ</button>
+                </div>` : ""}
               </div>
             </div>`).join("")}
         </div>`).join("")}</div>`;
@@ -1339,6 +1433,13 @@
       document.querySelectorAll("[data-screen]").forEach(btn => btn.addEventListener("click", () => showScreen(btn.dataset.screen)));
       document.querySelectorAll("[data-open]").forEach(btn => btn.addEventListener("click", () => openSheet(btn.dataset.open + "Sheet")));
       document.querySelectorAll("[data-close], .sheetwrap").forEach(el => el.addEventListener("click", e => { if (e.target === el || e.target.hasAttribute("data-close")) closeSheets(); }));
+      document.addEventListener("click", e => {
+        const action = e.target.closest("[data-event-action]");
+        if (!action) return;
+        e.preventDefault();
+        e.stopPropagation();
+        handleTimelineAction(action);
+      });
       document.getElementById("improveQuick").onclick = () => activeAttack() ? openSheet("improveSheet") : toast("ยังไม่มี attack ที่ active");
       document.getElementById("exportDataBtn").onclick = exportBackup;
       document.getElementById("importDataBtn").onclick = () => document.getElementById("importFileInput").click();
