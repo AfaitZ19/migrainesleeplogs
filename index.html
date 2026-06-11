@@ -128,7 +128,7 @@
     }
     .activeattack.on { display: grid; }
     .activeattack strong { font-size: 18px; line-height: 1.15; }
-    .activeactions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .activeactions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
     .activeactions button {
       border: 1px solid var(--line);
       border-radius: 12px;
@@ -139,6 +139,7 @@
     }
     .activeactions .better { background: rgba(97,211,148,.18); border-color: rgba(97,211,148,.36); }
     .activeactions .worse { background: rgba(255,116,116,.18); border-color: rgba(255,116,116,.36); }
+    .activeactions .trigger { background: rgba(247,200,79,.15); border-color: rgba(247,200,79,.34); }
     .bigbtn {
       border: 1px solid var(--line);
       background: var(--panel);
@@ -373,6 +374,27 @@
     .triggerbar { height: 16px; border-radius: 999px; background: rgba(255,255,255,.07); overflow: hidden; }
     .triggerfill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--blue), var(--yellow), var(--red)); }
     .triggerpct { color: var(--muted); font-size: 12px; text-align: right; }
+    .zoombar { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }
+    .zoombtn {
+      min-height: 48px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      color: var(--text);
+      font-weight: 950;
+      cursor: pointer;
+    }
+    .zoombtn.on { border-color: var(--blue); background: rgba(119,187,255,.16); }
+    .customzoom { display: grid; grid-template-columns: minmax(0, 1fr) 92px; gap: 8px; margin-bottom: 12px; }
+    .customzoom input { min-height: 48px; }
+    .customzoom button {
+      border: 1px solid rgba(119,187,255,.35);
+      background: rgba(119,187,255,.14);
+      color: var(--text);
+      border-radius: 12px;
+      font-weight: 950;
+      cursor: pointer;
+    }
     .reportherogrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
     .herometric { border: 1px solid rgba(119,187,255,.22); background: var(--panel2); border-radius: 13px; padding: 12px; min-height: 92px; }
     .herometric b { display: block; font-size: 30px; line-height: 1; margin-bottom: 8px; }
@@ -393,6 +415,17 @@
     .hrchips .chip.trigger { border-color: rgba(255,116,116,.46); background: rgba(255,116,116,.16); }
     .chips.hrchips { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .zonebox { border: 1px solid var(--line); background: var(--panel2); border-radius: 12px; padding: 12px; margin-top: 12px; font-weight: 950; }
+    .manualhr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: stretch; margin-top: 12px; }
+    .manualhr input { min-height: 58px; font-size: 22px; font-weight: 950; text-align: center; }
+    .manualhr button {
+      min-width: 96px;
+      border: 1px solid rgba(119,187,255,.35);
+      background: rgba(119,187,255,.14);
+      color: var(--text);
+      border-radius: 12px;
+      font-weight: 950;
+      cursor: pointer;
+    }
     .previewlist { display: grid; gap: 6px; margin-top: 10px; }
     .previewrow { display: flex; justify-content: space-between; gap: 10px; border: 1px solid var(--line); background: rgba(255,255,255,.04); border-radius: 10px; padding: 8px 10px; }
     .formgrid { display: grid; gap: 10px; }
@@ -441,6 +474,7 @@
           <div class="activeactions">
             <button class="better" id="activeImproveBtn">ดีขึ้น</button>
             <button class="worse" id="activeWorseBtn">หนักขึ้น</button>
+            <button class="trigger" id="activeTriggerBtn">Trigger</button>
           </div>
         </div>
 
@@ -626,9 +660,24 @@
       <div class="sheethead"><div class="sheettitle">❤️ บันทึก HR</div><button class="x" data-close>×</button></div>
       <div class="label" id="hrSheetLabel">HR ตอนนี้กี่ BPM</div>
       <div class="chips hrchips" id="hrChips"></div>
+      <div class="manualhr">
+        <input id="hrManualInput" type="number" min="40" max="220" inputmode="numeric" placeholder="BPM">
+        <button id="useManualHr" type="button">Use</button>
+      </div>
       <div class="zonebox" id="hrZoneLabel">เลือกค่า HR</div>
       <button class="primary" id="saveHr">บันทึก HR</button>
       <button class="secondary" data-close>ยกเลิก</button>
+    </div>
+  </div>
+
+  <div class="sheetwrap" id="triggerSheet">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheethead"><div class="sheettitle" id="triggerSheetTitle">🎯 Trigger?</div><button class="x" data-close>×</button></div>
+      <div class="backup-note" id="triggerSheetNote">Optional. Pick anything that may have started this migraine.</div>
+      <div class="chips" id="quickTriggerChips"></div>
+      <button class="primary" id="saveQuickTriggers">Save trigger</button>
+      <button class="secondary" data-close>Skip</button>
     </div>
   </div>
 
@@ -748,6 +797,7 @@
         hrNormal: "🟢 Normal",
         hrWatch: "🟡 Watch zone",
         hrTrigger: "🔴 Trigger zone",
+        hrUse: "Use",
         hrSaved: "HR saved",
         hrImport: "Import HR from Shortcut",
         hrImportSub: "clipboard JSON",
@@ -852,6 +902,7 @@
         hrNormal: "🟢 ปกติ",
         hrWatch: "🟡 น่าเฝ้าดู",
         hrTrigger: "🔴 Trigger zone",
+        hrUse: "ใช้เลขนี้",
         hrSaved: "บันทึก HR แล้ว",
         hrImport: "Import HR จาก Shortcut",
         hrImportSub: "clipboard JSON",
@@ -1032,8 +1083,11 @@
     let selectedWorseSymptoms = new Set();
     let selectedWakeHeadache = "ไม่ปวด";
     let selectedHrBpm = 90;
+    let quickTriggerAttackId = "";
+    let quickTriggers = new Set();
     let pendingHrImport = null;
     let graphFilter = { type: "recent", label: "Last 90 days" };
+    let graphRangeDays = 90;
     let editingCalendarId = "";
     let editingCalendarType = "";
     let currentLang = localStorage.getItem(LANG_KEY) || "en";
@@ -1212,9 +1266,43 @@
       return true;
     }
     function addEvent(event) {
-      events.unshift({ id: uid(), at: nowIso(), ...event });
+      const entry = { id: uid(), at: nowIso(), ...event };
+      events.unshift(entry);
       write(EVENT_KEY, events);
       render();
+      return entry;
+    }
+    function latestAttackStart() {
+      return events
+        .filter(e => e.type === "attack_start")
+        .sort((a, b) => new Date(b.at) - new Date(a.at))[0] || null;
+    }
+    function setSelectedHr(value) {
+      if (value === "" || value == null) return false;
+      const raw = Number(value);
+      if (!Number.isFinite(raw)) return false;
+      const bpm = Math.max(40, Math.min(220, Math.round(raw)));
+      selectedHrBpm = bpm;
+      const chips = document.getElementById("hrChips");
+      if (chips) chips.innerHTML = hrChipsHtml(selectedHrBpm);
+      const input = document.getElementById("hrManualInput");
+      if (input) input.value = String(selectedHrBpm);
+      const zone = document.getElementById("hrZoneLabel");
+      if (zone) zone.textContent = hrZoneText(selectedHrBpm);
+      return true;
+    }
+    function openTriggerEditor(attackId = "") {
+      const attack = attackId ? events.find(e => e.id === attackId) : latestAttackStart();
+      if (!attack) return toast(currentLang === "en" ? "No migraine to add trigger" : "ยังไม่มีรายการปวดให้ใส่ trigger");
+      quickTriggerAttackId = attack.id;
+      quickTriggers = new Set(detailList(attack.triggers));
+      document.getElementById("quickTriggerChips").innerHTML = chipHtml(TRIGGERS, quickTriggers);
+      document.getElementById("triggerSheetTitle").textContent = currentLang === "en" ? "🎯 Add trigger" : "🎯 เพิ่ม trigger";
+      document.getElementById("triggerSheetNote").textContent = currentLang === "en"
+        ? "Optional. Pick anything that may have started this migraine."
+        : "ไม่บังคับ เลือกสิ่งที่น่าจะกระตุ้นรอบนี้";
+      document.getElementById("saveQuickTriggers").textContent = currentLang === "en" ? "Save trigger" : "บันทึก trigger";
+      openSheet("triggerSheet");
     }
     function findMatchingMedLog(item) {
       return medLogs.find(m => m.id === item.id)
@@ -1287,6 +1375,7 @@
       };
       if (button.dataset.eventAction === "delete") deleteTimelineItem(item);
       if (button.dataset.eventAction === "note") noteTimelineItem(item);
+      if (button.dataset.eventAction === "trigger") openTriggerEditor(item.id);
     }
     function sorted(list, field = "at") { return [...list].sort((a, b) => new Date(b[field]) - new Date(a[field])); }
     function todayMedLogs() { return medLogs.filter(l => l.date === todayKey()); }
@@ -1322,6 +1411,7 @@
       document.getElementById("activeAttackText").textContent = `${t("activeAttack")} · ${fmtMins(mins)}`;
       document.getElementById("activeImproveBtn").textContent = t("improve");
       document.getElementById("activeWorseBtn").textContent = t("worse");
+      document.getElementById("activeTriggerBtn").textContent = currentLang === "en" ? "Trigger" : "Trigger";
       banner.classList.add("on");
     }
     function lastBefore(type, iso) {
@@ -1580,9 +1670,7 @@
         document.getElementById("napMin").value = existing?.napMinutes ?? "";
       }
       if (id === "hrSheet") {
-        selectedHrBpm = 90;
-        document.getElementById("hrChips").innerHTML = hrChipsHtml(selectedHrBpm);
-        document.getElementById("hrZoneLabel").textContent = hrZoneText(selectedHrBpm);
+        setSelectedHr(90);
       }
       if (id === "doctorEventSheet") {
         const existing = editingCalendarId ? calEvents.find(e => e.id === editingCalendarId && e.type === "appointment") : null;
@@ -1782,21 +1870,42 @@
           ${days.map(graphDay).join("")}
         </div>` : `<div class="empty">${esc(t("noData"))}</div>`;
     }
+    function graphRangeStart() {
+      return startOfDay(addDays(new Date(), -(graphRangeDays - 1)));
+    }
+    function graphRangeLabel() {
+      return `${graphRangeDays} day${graphRangeDays === 1 ? "" : "s"}`;
+    }
+    function setGraphRange(days) {
+      const next = Math.max(1, Math.min(365, Math.round(Number(days) || 90)));
+      graphRangeDays = next;
+      graphFilter = { type: "recent", label: currentLang === "en" ? `Last ${graphRangeDays} days` : `${graphRangeDays} วันล่าสุด` };
+      showScreen("graphs");
+      renderGraphDashboard();
+    }
     function weeklyAttackBuckets() {
-      const start = mondayOf(addDays(new Date(), -84));
-      return Array.from({ length: 13 }, (_, i) => {
-        const from = addDays(start, i * 7);
-        const to = addDays(from, 7);
+      const today = startOfDay(new Date());
+      const useDaily = graphRangeDays <= 14;
+      const start = useDaily ? graphRangeStart() : mondayOf(graphRangeStart());
+      const bucketDays = useDaily ? 1 : 7;
+      const count = useDaily ? graphRangeDays : Math.ceil((today - start) / 86400000 / 7) + 1;
+      return Array.from({ length: count }, (_, i) => {
+        const from = addDays(start, i * bucketDays);
+        const to = addDays(from, bucketDays);
         const attacks = attacksInRange(from, to);
         const severities = attacks.map(a => Number(a.severity)).filter(Number.isFinite);
         const avgSeverity = severities.length ? severities.reduce((s, v) => s + v, 0) / severities.length : 0;
-        return { from, to, key: isoDay(from), label: `${from.getDate()}/${from.getMonth() + 1}`, count: attacks.length, avgSeverity };
-      });
+        const label = useDaily
+          ? from.toLocaleDateString(currentLang === "en" ? "en-US" : "th-TH", { weekday: "short" }).slice(0, 3)
+          : `${from.getDate()}/${from.getMonth() + 1}`;
+        return { from, to, key: isoDay(from), label, count: attacks.length, avgSeverity };
+      }).filter(b => b.from <= today);
     }
     function frequencySvg(idPrefix = "freq") {
       const buckets = weeklyAttackBuckets();
       const max = Math.max(1, ...buckets.map(b => b.count));
-      const barW = 20, gap = 5, base = 128;
+      const gap = 5, base = 128;
+      const barW = Math.max(12, Math.min(28, (310 - gap * Math.max(0, buckets.length - 1)) / Math.max(1, buckets.length)));
       const bars = buckets.map((b, i) => {
         const x = 24 + i * (barW + gap);
         const bh = Math.max(3, (b.count / max) * 92);
@@ -1814,7 +1923,7 @@
     }
     function heatmapSvg() {
       const today = startOfDay(new Date());
-      const start = mondayOf(addDays(today, -89));
+      const start = mondayOf(graphRangeStart());
       const days = Math.ceil((today - start) / 86400000) + 1;
       const weeks = Math.ceil(days / 7);
       const cell = 22, gap = 4, left = 28, top = 18;
@@ -1837,11 +1946,12 @@
       return `<svg class="chartsvg" viewBox="0 0 220 ${top + weeks * (cell + gap) + 8}" aria-label="severity heatmap">${labels}${cells.join("")}</svg>`;
     }
     function triggerRankingHtml() {
-      const attacks = events.filter(e => e.type === "attack_start");
+      const start = graphRangeStart();
+      const attacks = events.filter(e => e.type === "attack_start" && new Date(e.at) >= start);
       const counts = {};
       attacks.forEach(a => detailList(a.triggers).forEach(t => counts[t] = (counts[t] || 0) + 1));
       const rows = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-      if (!rows.length) return `<div class="empty">ยังไม่มี trigger data</div>`;
+      if (!rows.length) return `<div class="empty">${currentLang === "en" ? "No trigger data in this zoom range" : "ยังไม่มี trigger ในช่วงนี้"}</div>`;
       return rows.map(([name, count]) => {
         const pct = attacks.length ? Math.round((count / attacks.length) * 100) : 0;
         const displayName = choiceLabel(name, name);
@@ -1854,7 +1964,8 @@
     }
     function timeOfDaySvg() {
       const hours = Array.from({ length: 24 }, () => 0);
-      events.filter(e => e.type === "attack_start").forEach(e => hours[new Date(e.at).getHours()]++);
+      const start = graphRangeStart();
+      events.filter(e => e.type === "attack_start" && new Date(e.at) >= start).forEach(e => hours[new Date(e.at).getHours()]++);
       const max = Math.max(1, ...hours);
       const bars = hours.map((count, hour) => {
         const x = 16 + hour * 13;
@@ -1870,9 +1981,16 @@
     }
     function renderGraphDashboard() {
       document.getElementById("graphDashboard").innerHTML = `
+        <div class="zoombar" role="group" aria-label="Graph zoom">
+          ${[1, 7, 30, 90].map(days => `<button class="zoombtn ${graphRangeDays === days ? "on" : ""}" data-graph-range="${days}">${days}d</button>`).join("")}
+        </div>
+        <div class="customzoom">
+          <input id="customGraphDays" type="number" min="1" max="365" inputmode="numeric" value="${esc(graphRangeDays)}" aria-label="Custom graph days">
+          <button id="applyGraphDays" type="button">${currentLang === "en" ? "Zoom" : "ซูม"}</button>
+        </div>
         <div class="chartgrid">
           <div class="chartcard">
-            <div class="charthead"><div class="charttitle">${currentLang === "en" ? "Weekly attack frequency" : "จำนวนครั้งต่อสัปดาห์"}</div><div class="chartnote">${currentLang === "en" ? "Last 90 days · tap a bar to filter" : "90 วันล่าสุด · แตะแท่งเพื่อกรอง"}</div></div>
+            <div class="charthead"><div class="charttitle">${currentLang === "en" ? "Attack frequency" : "จำนวนครั้งที่ปวด"}</div><div class="chartnote">${graphRangeLabel()} · ${currentLang === "en" ? "tap a bar to filter" : "แตะแท่งเพื่อกรอง"}</div></div>
             ${frequencySvg("mainFreq")}
           </div>
           <div class="chartcard">
@@ -1880,7 +1998,7 @@
             ${heatmapSvg()}
           </div>
           <div class="chartcard">
-            <div class="charthead"><div class="charttitle">${currentLang === "en" ? "Top triggers" : "Trigger ที่เจอบ่อย"}</div><div class="chartnote">${currentLang === "en" ? "% of attacks" : "% จาก attack ทั้งหมด"}</div></div>
+            <div class="charthead"><div class="charttitle">${currentLang === "en" ? "Top triggers" : "Trigger ที่เจอบ่อย"}</div><div class="chartnote">${graphRangeLabel()} · ${currentLang === "en" ? "% of attacks" : "% จาก attack"}</div></div>
             ${triggerRankingHtml()}
           </div>
           <div class="chartcard">
@@ -1899,10 +2017,10 @@
       } else if (graphFilter.type === "day") {
         list = list.filter(e => dateKey(e.at) === graphFilter.key);
       } else {
-        const start = addDays(new Date(), -90);
+        const start = graphRangeStart();
         list = list.filter(e => new Date(e.at) >= start);
       }
-      const label = graphFilter.type === "recent" ? (currentLang === "en" ? "Last 90 days" : "90 วันล่าสุด") : graphFilter.label;
+      const label = graphFilter.type === "recent" ? (currentLang === "en" ? `Last ${graphRangeDays} days` : `${graphRangeDays} วันล่าสุด`) : graphFilter.label;
       document.getElementById("graphTimelineLabel").textContent = `${currentLang === "en" ? "Timeline" : "ไทม์ไลน์"}: ${label}`;
       renderTimeline("graphTimeline", list);
     }
@@ -1987,7 +2105,9 @@
           e.side ? `${currentLang === "en" ? "Side" : "ข้าง"}: ${choiceLabel(e.side, e.side)}` : "",
           Number.isFinite(Number(e.severity)) ? `${currentLang === "en" ? "Pain" : "ปวด"} ${e.severity}/10` : "",
           ...symptomList(e),
-          ...detailList(e.triggers).map(trigger => `trigger: ${choiceLabel(trigger, trigger)}`)
+          ...(detailList(e.triggers).length
+            ? detailList(e.triggers).map(trigger => `trigger: ${choiceLabel(trigger, trigger)}`)
+            : [currentLang === "en" ? "trigger: not logged" : "trigger: ยังไม่ได้ใส่"])
         ].filter(Boolean)
       };
       if (e.type === "improved") return {
@@ -2075,6 +2195,7 @@
                 ${e.note ? `<div class="eventnote">${esc(e.note)}</div>` : ""}
                 ${e.gap ? `<div class="gapnote">${currentLang === "en" ? "Previous" : "ก่อนหน้านี้"} ${esc(e.gap)}</div>` : ""}
                 ${e.id ? `<div class="eventactions">
+                  ${e.type === "attack_start" ? `<button class="eventaction" data-event-action="trigger" data-source="${esc(e.source || "event")}" data-id="${esc(e.id)}" data-at="${esc(e.at)}" data-med="${esc(e.medId || "")}">${currentLang === "en" ? "Trigger" : "Trigger"}</button>` : ""}
                   <button class="eventaction" data-event-action="note" data-source="${esc(e.source || "event")}" data-id="${esc(e.id)}" data-at="${esc(e.at)}" data-med="${esc(e.medId || "")}">${currentLang === "en" ? "Note" : "โน้ต"}</button>
                   <button class="eventaction danger" data-event-action="delete" data-source="${esc(e.source || "event")}" data-id="${esc(e.id)}" data-at="${esc(e.at)}" data-med="${esc(e.medId || "")}">${currentLang === "en" ? "Delete" : "ลบ"}</button>
                 </div>` : ""}
@@ -2479,6 +2600,7 @@
       setText("#saveSleep", t("saveSleep"));
       setText("#hrSheet .sheettitle", t("hrSheetTitle"));
       setText("#hrSheetLabel", t("hrSheetLabel"));
+      setText("#useManualHr", t("hrUse"));
       setText("#saveHr", t("saveHr"));
       setText("#hrImportSheet .sheettitle", t("hrImportTitle"));
       setText("#importHrAll", t("hrImportAll"));
@@ -2556,6 +2678,7 @@
       document.getElementById("emergencyAttackBtn").onclick = () => openSheet("emergencyAttackSheet");
       document.getElementById("activeImproveBtn").onclick = () => activeAttack() ? openSheet("improveSheet") : toast(t("activeMissing"));
       document.getElementById("activeWorseBtn").onclick = () => activeAttack() ? openSheet("worseSheet") : toast(t("activeMissing"));
+      document.getElementById("activeTriggerBtn").onclick = () => activeAttack() ? openTriggerEditor(activeAttack().id) : toast(t("activeMissing"));
       document.getElementById("exportDataBtn").onclick = exportBackup;
       document.getElementById("importDataBtn").onclick = () => document.getElementById("importFileInput").click();
       document.getElementById("importFileInput").onchange = e => {
@@ -2568,9 +2691,11 @@
       document.getElementById("importHrSpikes").onclick = () => saveImportedHr("spikes");
       document.getElementById("hrChips").onclick = e => {
         const b = e.target.closest(".chip"); if (!b) return;
-        selectedHrBpm = Number(b.dataset.value);
-        document.getElementById("hrChips").innerHTML = hrChipsHtml(selectedHrBpm);
-        document.getElementById("hrZoneLabel").textContent = hrZoneText(selectedHrBpm);
+        setSelectedHr(Number(b.dataset.value));
+      };
+      document.getElementById("useManualHr").onclick = () => {
+        const input = document.getElementById("hrManualInput");
+        if (!setSelectedHr(input.value)) toast(currentLang === "en" ? "Enter BPM number" : "ใส่เลข BPM ก่อน");
       };
       document.getElementById("saveHr").onclick = () => {
         addEvent({ type: "hr_elevated", bpm: selectedHrBpm, zone: hrZone(selectedHrBpm), source: "manual" });
@@ -2582,7 +2707,7 @@
         const severity = Number(b.dataset.value);
         const at = nowIso();
         const prodrome = lastBefore("prodrome", at);
-        addEvent({
+        const entry = addEvent({
           type: "attack_start",
           side: "",
           severity,
@@ -2595,11 +2720,22 @@
         });
         closeSheets();
         toast(currentLang === "en" ? `Saved pain ${severity}/10` : `บันทึกปวด ${severity}/10`);
+        setTimeout(() => openTriggerEditor(entry.id), 180);
       };
       document.addEventListener("click", e => {
         const week = e.target.closest("[data-graph-week]");
         const day = e.target.closest("[data-graph-day]");
-        if (!week && !day) return;
+        const range = e.target.closest("[data-graph-range]");
+        const customRange = e.target.closest("#applyGraphDays");
+        if (!week && !day && !range && !customRange) return;
+        if (customRange) {
+          setGraphRange(document.getElementById("customGraphDays")?.value);
+          return;
+        }
+        if (range) {
+          setGraphRange(range.dataset.graphRange);
+          return;
+        }
         if (week) {
           const start = new Date(week.dataset.graphWeek + "T00:00:00");
           const end = addDays(start, 6);
@@ -2611,6 +2747,26 @@
         renderGraphTimeline();
         document.getElementById("graphTimeline").scrollIntoView({ behavior: "smooth", block: "start" });
       });
+      document.getElementById("quickTriggerChips").onclick = e => {
+        const b = e.target.closest(".chip"); if (!b) return;
+        const v = b.dataset.value;
+        if (v === "ไม่รู้") {
+          quickTriggers = quickTriggers.has(v) ? new Set() : new Set([v]);
+        } else {
+          quickTriggers.delete("ไม่รู้");
+          quickTriggers.has(v) ? quickTriggers.delete(v) : quickTriggers.add(v);
+        }
+        document.getElementById("quickTriggerChips").innerHTML = chipHtml(TRIGGERS, quickTriggers);
+      };
+      document.getElementById("saveQuickTriggers").onclick = () => {
+        const attack = events.find(e => e.id === quickTriggerAttackId);
+        if (!attack) return toast(currentLang === "en" ? "Migraine not found" : "ไม่เจอรายการปวด");
+        attack.triggers = [...quickTriggers];
+        write(EVENT_KEY, events);
+        closeSheets();
+        toast(currentLang === "en" ? "Trigger saved" : "บันทึก trigger แล้ว");
+        render();
+      };
       document.getElementById("prodromeChips").onclick = e => {
         const b = e.target.closest(".chip"); if (!b) return;
         const v = b.dataset.value; selectedProdrome.has(v) ? selectedProdrome.delete(v) : selectedProdrome.add(v);
