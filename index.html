@@ -709,6 +709,8 @@
     let selectedWorseSymptoms = new Set();
     let selectedWakeHeadache = "ไม่ปวด";
     let graphFilter = { type: "recent", label: "90 วันล่าสุด" };
+    let editingCalendarId = "";
+    let editingCalendarType = "";
 
     function read(key, fallback) {
       try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); }
@@ -1093,16 +1095,20 @@
         document.getElementById("napMin").value = existing?.napMinutes ?? "";
       }
       if (id === "doctorEventSheet") {
-        document.getElementById("apptDate").value = "";
-        document.getElementById("apptTime").value = "";
-        document.getElementById("apptPlace").value = "";
-        document.getElementById("doctorName").value = "";
-        document.getElementById("apptNote").value = "";
+        const existing = editingCalendarId ? calEvents.find(e => e.id === editingCalendarId && e.type === "appointment") : null;
+        document.getElementById("apptDate").value = existing?.date || "";
+        document.getElementById("apptTime").value = existing?.time || "";
+        document.getElementById("apptPlace").value = existing?.place || "";
+        document.getElementById("doctorName").value = existing?.doctor || "";
+        document.getElementById("apptNote").value = existing?.note || "";
+        document.getElementById("saveDoctorEvent").textContent = existing ? "บันทึกการแก้ไข" : "บันทึกนัดหมอ";
       }
       if (id === "refillEventSheet") {
-        document.getElementById("orderDate").value = "";
-        document.getElementById("medEndDate").value = "";
-        document.getElementById("refillNote").value = "";
+        const existing = editingCalendarId ? calEvents.find(e => e.id === editingCalendarId && e.type === "refill") : null;
+        document.getElementById("orderDate").value = existing?.orderDate || "";
+        document.getElementById("medEndDate").value = existing?.medEndDate || existing?.refillDueDate || "";
+        document.getElementById("refillNote").value = existing?.note || "";
+        document.getElementById("saveRefillEvent").textContent = existing ? "บันทึกการแก้ไข" : "บันทึกวันยา";
       }
     }
 
@@ -1567,7 +1573,17 @@
           <div class="row between"><strong>${e.type === "appointment" ? "นัดหมอ" : "สั่งยา / รับยา"}</strong><span>${esc(e.date)}</span></div>
           <div class="mini">${esc(e.type === "appointment" ? `${e.time || ""} ${e.place || ""} ${e.doctor || ""}` : `วันสั่งยา ${e.orderDate || "-"} · วันยาหมด ${e.medEndDate || e.refillDueDate || "-"}`)}</div>
           ${e.note ? `<div class="mini">${esc(e.note)}</div>` : ""}
+          <div class="eventactions" style="margin-top:10px">
+            <button class="eventaction" data-cal-edit="${esc(e.id)}" data-cal-type="${esc(e.type)}">แก้ไข</button>
+          </div>
         </div>`).join("") : `<div class="empty">ยังไม่มี calendar event</div>`;
+    }
+    function editCalendarEvent(id, type) {
+      const event = calEvents.find(e => e.id === id && e.type === type);
+      if (!event) return toast("ไม่เจอรายการนี้");
+      editingCalendarId = id;
+      editingCalendarType = type;
+      openSheet(type === "appointment" ? "doctorEventSheet" : "refillEventSheet");
     }
 
     function sleepDuration(bed, wake) {
@@ -1846,7 +1862,13 @@
 
     function setup() {
       document.querySelectorAll("[data-screen]").forEach(btn => btn.addEventListener("click", () => showScreen(btn.dataset.screen)));
-      document.querySelectorAll("[data-open]").forEach(btn => btn.addEventListener("click", () => openSheet(btn.dataset.open + "Sheet")));
+      document.querySelectorAll("[data-open]").forEach(btn => btn.addEventListener("click", () => {
+        if (btn.dataset.open === "doctorEvent" || btn.dataset.open === "refillEvent") {
+          editingCalendarId = "";
+          editingCalendarType = "";
+        }
+        openSheet(btn.dataset.open + "Sheet");
+      }));
       document.querySelectorAll("[data-close], .sheetwrap").forEach(el => el.addEventListener("click", e => { if (e.target === el || e.target.hasAttribute("data-close")) closeSheets(); }));
       document.addEventListener("click", e => {
         const action = e.target.closest("[data-event-action]");
@@ -1854,6 +1876,13 @@
         e.preventDefault();
         e.stopPropagation();
         handleTimelineAction(action);
+      });
+      document.addEventListener("click", e => {
+        const edit = e.target.closest("[data-cal-edit]");
+        if (!edit) return;
+        e.preventDefault();
+        e.stopPropagation();
+        editCalendarEvent(edit.dataset.calEdit, edit.dataset.calType);
       });
       document.getElementById("emergencyAttackBtn").onclick = () => openSheet("emergencyAttackSheet");
       document.getElementById("activeImproveBtn").onclick = () => activeAttack() ? openSheet("improveSheet") : toast("ยังไม่มี attack ที่ active");
@@ -2027,14 +2056,20 @@
       };
 
       document.getElementById("saveDoctorEvent").onclick = () => {
-        const entry = { id: uid(), type: "appointment", date: document.getElementById("apptDate").value, time: document.getElementById("apptTime").value, place: document.getElementById("apptPlace").value.trim(), doctor: document.getElementById("doctorName").value.trim(), note: document.getElementById("apptNote").value.trim(), createdAt: nowIso() };
+        const existing = editingCalendarId ? calEvents.find(e => e.id === editingCalendarId && e.type === "appointment") : null;
+        const entry = { id: existing?.id || uid(), type: "appointment", date: document.getElementById("apptDate").value, time: document.getElementById("apptTime").value, place: document.getElementById("apptPlace").value.trim(), doctor: document.getElementById("doctorName").value.trim(), note: document.getElementById("apptNote").value.trim(), createdAt: existing?.createdAt || nowIso(), updatedAt: existing ? nowIso() : undefined };
         if (!entry.date) return toast("ใส่ date ก่อน");
-        calEvents.unshift(entry); write(CAL_KEY, calEvents); closeSheets(); toast("บันทึกนัดหมอแล้ว"); render();
+        calEvents = existing ? calEvents.map(e => e.id === existing.id ? entry : e) : [entry, ...calEvents];
+        editingCalendarId = ""; editingCalendarType = "";
+        write(CAL_KEY, calEvents); closeSheets(); toast(existing ? "แก้ไขนัดหมอแล้ว" : "บันทึกนัดหมอแล้ว"); render();
       };
       document.getElementById("saveRefillEvent").onclick = () => {
-        const entry = { id: uid(), type: "refill", orderDate: document.getElementById("orderDate").value, medEndDate: document.getElementById("medEndDate").value, note: document.getElementById("refillNote").value.trim(), createdAt: nowIso() };
+        const existing = editingCalendarId ? calEvents.find(e => e.id === editingCalendarId && e.type === "refill") : null;
+        const entry = { id: existing?.id || uid(), type: "refill", orderDate: document.getElementById("orderDate").value, medEndDate: document.getElementById("medEndDate").value, note: document.getElementById("refillNote").value.trim(), createdAt: existing?.createdAt || nowIso(), updatedAt: existing ? nowIso() : undefined };
         if (!entry.orderDate && !entry.medEndDate) return toast("ใส่วันสั่งยาหรือวันยาหมดก่อน");
-        calEvents.unshift(entry); write(CAL_KEY, calEvents); closeSheets(); toast("บันทึกวันยาแล้ว"); render();
+        calEvents = existing ? calEvents.map(e => e.id === existing.id ? entry : e) : [entry, ...calEvents];
+        editingCalendarId = ""; editingCalendarType = "";
+        write(CAL_KEY, calEvents); closeSheets(); toast(existing ? "แก้ไขวันยาแล้ว" : "บันทึกวันยาแล้ว"); render();
       };
 
       render();
