@@ -95,7 +95,7 @@
     }
     .attackhero strong { font-size: 34px; line-height: 1.02; }
     .attackhero small { color: var(--pink2); font-size: 15px; font-weight: 850; }
-    .secondarygrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+    .secondarygrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; }
     .quicksmall {
       min-height: 78px;
       border: 1px solid var(--line);
@@ -112,6 +112,7 @@
     }
     .quicksmall span { font-size: 25px; line-height: 1; }
     .quicksmall small { display: block; color: var(--muted); font-size: 11px; font-weight: 750; }
+    .quicksmall.red { background: linear-gradient(145deg, rgba(255,116,116,.2), var(--panel)); border-color: rgba(255,116,116,.38); }
     .activeattack {
       display: none;
       position: sticky;
@@ -216,6 +217,7 @@
     .event.medication .eventcard { border-left-color: var(--yellow); background: linear-gradient(145deg, rgba(247,200,79,.11), var(--panel)); }
     .event.attack_start .eventcard { border-left-color: var(--pink); background: linear-gradient(145deg, rgba(255,143,175,.14), var(--panel)); }
     .event.worse .eventcard { border-left-color: var(--red); background: linear-gradient(145deg, rgba(255,116,116,.14), var(--panel)); }
+    .event.hr_elevated .eventcard { border-left-color: var(--red); background: linear-gradient(145deg, rgba(255,116,116,.11), var(--panel)); }
     .event.prodrome .eventcard { border-left-color: var(--blue); background: linear-gradient(145deg, rgba(119,187,255,.12), var(--panel)); }
     .event.improved .eventcard { border-left-color: var(--green); background: linear-gradient(145deg, rgba(97,211,148,.12), var(--panel)); }
     .event.sleep .eventcard { border-left-color: var(--blue); }
@@ -249,6 +251,7 @@
     .legenddot.attack_start { background: var(--pink); }
     .legenddot.worse { background: var(--red); }
     .legenddot.improved { background: var(--green); }
+    .legenddot.hr_elevated { background: var(--red); }
     .graphday { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; }
     .graphdayhead { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; margin-bottom: 10px; }
     .graphdate { font-weight: 950; }
@@ -283,6 +286,7 @@
     .mark.prodrome { background: var(--blue); top: 34%; }
     .mark.attack_start { background: var(--pink); width: 40px; height: 40px; font-size: 20px; }
     .mark.worse { background: var(--red); top: 50%; width: 34px; height: 34px; }
+    .mark.hr_elevated { background: var(--red); top: 72%; width: 26px; height: 26px; font-size: 13px; }
     .mark.improved { background: var(--green); top: 34%; }
     .mark.sleep { background: var(--blue); opacity: .72; width: 25px; height: 25px; font-size: 13px; }
     .mark.event { background: var(--violet); }
@@ -357,6 +361,7 @@
     .charttitle { font-size: 17px; font-weight: 950; }
     .chartnote { color: var(--muted); font-size: 12px; text-align: right; }
     .chartsvg { width: 100%; height: auto; display: block; overflow: visible; }
+    .chartmuted { fill: var(--muted); font-size: 12px; font-weight: 800; }
     .charttap { cursor: pointer; }
     .chartlabel { fill: var(--muted); font-size: 10px; font-weight: 800; }
     .chartnum { fill: var(--text); font-size: 11px; font-weight: 950; }
@@ -383,6 +388,13 @@
     }
     .primary { background: var(--pink2); color: #221016; }
     .secondary { background: var(--panel); color: var(--muted); border: 1px solid var(--line); }
+    .hrchips .chip.watch { border-color: rgba(247,200,79,.42); background: rgba(247,200,79,.14); }
+    .hrchips .chip.normal { border-color: rgba(97,211,148,.42); background: rgba(97,211,148,.13); }
+    .hrchips .chip.trigger { border-color: rgba(255,116,116,.46); background: rgba(255,116,116,.16); }
+    .chips.hrchips { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .zonebox { border: 1px solid var(--line); background: var(--panel2); border-radius: 12px; padding: 12px; margin-top: 12px; font-weight: 950; }
+    .previewlist { display: grid; gap: 6px; margin-top: 10px; }
+    .previewrow { display: flex; justify-content: space-between; gap: 10px; border: 1px solid var(--line); background: rgba(255,255,255,.04); border-radius: 10px; padding: 8px 10px; }
     .formgrid { display: grid; gap: 10px; }
     input, textarea {
       width: 100%;
@@ -438,6 +450,7 @@
             <button class="quicksmall violet" data-open="prodrome"><span>⚡</span>เริ่มแปลก<small>อาการนำ</small></button>
             <button class="quicksmall yellow" data-screen="meds"><span>💊</span>กินยา<small>บันทึกทันที</small></button>
             <button class="quicksmall blue" data-open="sleep"><span>🌅</span>ตอนเช้า<small>ตื่นมาปวด?</small></button>
+            <button class="quicksmall red" data-open="hr"><span>❤️</span>HR สูง<small>BPM</small></button>
           </div>
         </div>
 
@@ -465,6 +478,7 @@
             <div class="sub">เอาไว้ดู pattern ก่อนปวดหัว</div>
           </div>
         </div>
+        <div id="timelineCharts"></div>
         <div class="label">กราฟ pattern</div>
         <div id="patternGraph"></div>
         <div class="label">รายละเอียด</div>
@@ -512,6 +526,7 @@
           <div class="row between"><strong>Backup / Import</strong><span class="mini" id="backupStatus"></span></div>
           <div class="backup-actions">
             <button class="bigbtn green" id="exportDataBtn"><span class="ico">⬇️</span><strong>Export to Files</strong><small>migraine_data_YYYY-MM-DD.json</small></button>
+            <button class="bigbtn pink" id="importHrBtn"><span class="ico">📲</span><strong>Import HR from Shortcut</strong><small>clipboard JSON</small></button>
             <button class="bigbtn blue" id="importDataBtn"><span class="ico">⬆️</span><strong>Import from Files</strong><small>เลือก migraine_data.json จาก Files / iCloud Drive</small></button>
           </div>
           <div class="backup-note">iPhone PWA ต้องให้ผู้ใช้เลือกไฟล์เองจาก Files. แอปนี้ไม่อ่าน iCloud อัตโนมัติ และยังใช้ localStorage เพื่อทำงาน offline.</div>
@@ -605,6 +620,31 @@
     </div>
   </div>
 
+  <div class="sheetwrap" id="hrSheet">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheethead"><div class="sheettitle">❤️ บันทึก HR</div><button class="x" data-close>×</button></div>
+      <div class="label" id="hrSheetLabel">HR ตอนนี้กี่ BPM</div>
+      <div class="chips hrchips" id="hrChips"></div>
+      <div class="zonebox" id="hrZoneLabel">เลือกค่า HR</div>
+      <button class="primary" id="saveHr">บันทึก HR</button>
+      <button class="secondary" data-close>ยกเลิก</button>
+    </div>
+  </div>
+
+  <div class="sheetwrap" id="hrImportSheet">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheethead"><div class="sheettitle">📲 Import HR</div><button class="x" data-close>×</button></div>
+      <div id="hrImportPreview"></div>
+      <textarea id="hrImportTextarea" placeholder="Paste Shortcut JSON here" style="display:none"></textarea>
+      <button class="primary" id="importHrAll">Import all HR data</button>
+      <button class="secondary" id="importHrSpikes">Import spikes only</button>
+      <button class="secondary" id="parseHrTextarea" style="display:none">Preview pasted JSON</button>
+      <button class="secondary" data-close>ยกเลิก</button>
+    </div>
+  </div>
+
   <div class="sheetwrap" id="doctorEventSheet">
     <div class="sheet">
       <div class="handle"></div>
@@ -664,6 +704,8 @@
         medsSub: "Log dose",
         morningShort: "Morning",
         morningSub: "Wake headache?",
+        hrShort: "High HR",
+        hrSub: "BPM",
         todayTimeline: "Today's events",
         medsTitle: "💊 Medications",
         medsSubTitle: "Tap medication name = save exact time",
@@ -699,6 +741,24 @@
         painScore: "Pain score",
         attackSymptoms: "Symptoms at onset",
         attackTriggers: "Possible trigger",
+        hrSheetTitle: "❤️ Log HR",
+        hrSheetLabel: "Current HR in BPM",
+        hrPick: "Choose HR",
+        saveHr: "Save HR",
+        hrNormal: "🟢 Normal",
+        hrWatch: "🟡 Watch zone",
+        hrTrigger: "🔴 Trigger zone",
+        hrSaved: "HR saved",
+        hrImport: "Import HR from Shortcut",
+        hrImportSub: "clipboard JSON",
+        hrImportTitle: "📲 Import HR",
+        hrPaste: "Paste Shortcut JSON here",
+        hrPreviewButton: "Preview pasted JSON",
+        hrImportAll: "Import all HR data",
+        hrImportSpikes: "Import spikes only",
+        hrImportInvalid: "HR JSON is invalid",
+        hrClipboardDenied: "Clipboard denied. Paste JSON instead.",
+        hrImported: "Imported HR",
         saveAttack: "Save migraine start",
         improvedTitle: "😌 Better / resolved",
         improvedLabel: "Current pain score (0 = resolved)",
@@ -748,6 +808,8 @@
         medsSub: "บันทึกทันที",
         morningShort: "ตอนเช้า",
         morningSub: "ตื่นมาปวด?",
+        hrShort: "HR สูง",
+        hrSub: "BPM",
         todayTimeline: "วันนี้เกิดอะไรขึ้น",
         medsTitle: "💊 กินยาแล้ว",
         medsSubTitle: "แตะชื่อยา = บันทึกเวลาอัตโนมัติ",
@@ -783,6 +845,24 @@
         painScore: "ปวดกี่คะแนน",
         attackSymptoms: "อาการร่วมตอนเริ่มปวด",
         attackTriggers: "คิดว่า trigger จากอะไร",
+        hrSheetTitle: "❤️ บันทึก HR",
+        hrSheetLabel: "HR ตอนนี้กี่ BPM",
+        hrPick: "เลือกค่า HR",
+        saveHr: "บันทึก HR",
+        hrNormal: "🟢 ปกติ",
+        hrWatch: "🟡 น่าเฝ้าดู",
+        hrTrigger: "🔴 Trigger zone",
+        hrSaved: "บันทึก HR แล้ว",
+        hrImport: "Import HR จาก Shortcut",
+        hrImportSub: "clipboard JSON",
+        hrImportTitle: "📲 Import HR",
+        hrPaste: "วาง JSON จาก Shortcut",
+        hrPreviewButton: "Preview JSON",
+        hrImportAll: "Import ทั้งหมด",
+        hrImportSpikes: "Import เฉพาะ spikes",
+        hrImportInvalid: "JSON HR ไม่ถูกต้อง",
+        hrClipboardDenied: "อ่าน clipboard ไม่ได้ วาง JSON เองได้",
+        hrImported: "Import HR แล้ว",
         saveAttack: "บันทึกเริ่มปวด",
         improvedTitle: "😌 ดีขึ้น/หายแล้ว",
         improvedLabel: "ตอนนี้เหลือปวดกี่คะแนน (0 = หายแล้ว)",
@@ -851,10 +931,11 @@
       ["blurryVision", "ตาเบลอ"],
       ["nausea", "คลื่นไส้"]
     ];
-    const TRIGGERS = ["ไม่รู้", "แสง", "แดด", "ร้อน", "เสียงดัง", "จอ/คอม", "นอนน้อย", "เครียด/นอย", "กลิ่น", "เดินทาง", "กินข้าวช้า", "อากาศเปลี่ยน"];
+    const TRIGGERS = ["ไม่รู้", "แสง", "แดด", "ร้อน", "อากาศอบ/ถ่ายเทไม่ดี", "เสียงดัง", "จอ/คอม", "นอนน้อย", "เครียด/นอย", "กลิ่น", "เดินทาง", "กินข้าวช้า", "อากาศเปลี่ยน", "ฮอร์โมน/ประจำเดือน", "ตื่นเร็ว/นอนไม่พอ", "วันสั่งยา/รับยา"];
     const WORSE_SYMPTOMS = [["flashingLights", "แสงแวบ"], ["blurryVision", "ตาเบลอ"], ["nausea", "จะอ้วก/คลื่นไส้"], ["dizzy", "เวียนหัว"], ["brainFog", "สมองช้า"], ["neck", "คอแข็ง"]];
     const WAKE_HEADACHE = ["ไม่ปวด", "ปวดนิดหน่อย", "ปวดปานกลาง", "ปวดมาก"];
     const WAKE_HEADACHE_SEVERITY = { "ปวดนิดหน่อย": 3, "ปวดปานกลาง": 6, "ปวดมาก": 8 };
+    const HR_CHIPS = [70, 80, 90, 100, 110, 120, 130];
     const CLINICAL = {
       "หาวบ่อย": "frequent yawning / prodrome",
       "ง่วงผิดปกติ": "abnormal somnolence / prodrome",
@@ -871,6 +952,7 @@
       "แสง": "light exposure",
       "แดด": "sunlight exposure",
       "ร้อน": "heat exposure",
+      "อากาศอบ/ถ่ายเทไม่ดี": "poor ventilation / stuffy air",
       "เสียงดัง": "noise exposure",
       "จอ/คอม": "screen exposure",
       "นอนน้อย": "sleep deprivation",
@@ -879,6 +961,9 @@
       "เดินทาง": "travel / motion / routine disruption",
       "กินข้าวช้า": "delayed meal",
       "อากาศเปลี่ยน": "weather change",
+      "ฮอร์โมน/ประจำเดือน": "hormonal / menstrual trigger",
+      "ตื่นเร็ว/นอนไม่พอ": "early waking / insufficient sleep",
+      "วันสั่งยา/รับยา": "medication refill/order stress",
       "แสงแวบ": "visual aura with photopsia",
       "ตาเบลอ": "visual disturbance / blurred vision",
       "ท้ายทอยตึง": "occipital discomfort"
@@ -897,6 +982,7 @@
       "แสง": "Light",
       "แดด": "Sunlight",
       "ร้อน": "Heat",
+      "อากาศอบ/ถ่ายเทไม่ดี": "Stuffy air",
       "เสียงดัง": "Noise",
       "จอ/คอม": "Screen",
       "นอนน้อย": "Poor sleep",
@@ -905,6 +991,9 @@
       "เดินทาง": "Travel",
       "กินข้าวช้า": "Late meal",
       "อากาศเปลี่ยน": "Weather change",
+      "ฮอร์โมน/ประจำเดือน": "Hormone / period",
+      "ตื่นเร็ว/นอนไม่พอ": "Woke early / poor sleep",
+      "วันสั่งยา/รับยา": "Medication order/refill day",
       "ซ้าย": "Left",
       "ขวา": "Right",
       "ทั้งสองข้าง": "Both sides",
@@ -942,6 +1031,8 @@
     let selectedWorsePain = 8;
     let selectedWorseSymptoms = new Set();
     let selectedWakeHeadache = "ไม่ปวด";
+    let selectedHrBpm = 90;
+    let pendingHrImport = null;
     let graphFilter = { type: "recent", label: "Last 90 days" };
     let editingCalendarId = "";
     let editingCalendarType = "";
@@ -988,6 +1079,21 @@
       if (mins == null || Number.isNaN(mins)) return "-";
       if (mins < 60) return `${mins}m`;
       return `${Math.floor(mins/60)}h ${mins % 60 ? mins % 60 + "m" : ""}`.trim();
+    }
+    function hrZone(bpm) {
+      const n = Number(bpm);
+      if (n < 80) return "normal";
+      if (n <= 95) return "watch";
+      return "trigger";
+    }
+    function hrZoneText(bpm) {
+      const zone = hrZone(bpm);
+      return zone === "normal" ? t("hrNormal") : zone === "watch" ? t("hrWatch") : t("hrTrigger");
+    }
+    function hrMinuteKey(iso) {
+      const d = new Date(iso);
+      d.setSeconds(0, 0);
+      return d.toISOString().slice(0, 16);
     }
     function startOfDay(d) {
       const x = new Date(d);
@@ -1300,6 +1406,86 @@
       toast(mode === "replace" ? (currentLang === "en" ? "Imported: replace" : "Import แล้ว: replace") : (currentLang === "en" ? "Imported: merge" : "Import แล้ว: merge"));
       render();
     }
+    function normalizeHrImport(raw) {
+      if (!raw || raw.type !== "hr_health_sync") throw new Error("invalid type");
+      const source = Array.isArray(raw.readings) ? raw.readings
+        : Array.isArray(raw.samples) ? raw.samples
+        : Array.isArray(raw.data) ? raw.data
+        : Array.isArray(raw.spikes) ? raw.spikes
+        : [];
+      const all = source.map(item => {
+        const at = item.at || item.date || item.time || item.timestamp || item.startDate;
+        const bpm = Number(item.bpm ?? item.heartRate ?? item.value ?? item.hr);
+        if (!at || !Number.isFinite(bpm)) return null;
+        return { at: new Date(at).toISOString(), bpm, zone: item.zone || hrZone(bpm), source: "import" };
+      }).filter(Boolean);
+      const spikes = (Array.isArray(raw.spikes) ? raw.spikes : all.filter(x => x.bpm >= 95)).map(item => {
+        const at = item.at || item.date || item.time || item.timestamp || item.startDate;
+        const bpm = Number(item.bpm ?? item.heartRate ?? item.value ?? item.hr);
+        if (!at || !Number.isFinite(bpm)) return null;
+        return { at: new Date(at).toISOString(), bpm, zone: item.zone || hrZone(bpm), source: "import" };
+      }).filter(Boolean);
+      return { all, spikes, resting: raw.resting ?? raw.restingHr ?? raw.restingHeartRate ?? null, hrv: raw.hrv ?? raw.hrvMs ?? null };
+    }
+    function previewHrImport(data) {
+      pendingHrImport = data;
+      const previewItems = (data.spikes.length ? data.spikes : data.all).slice(0, 6);
+      document.getElementById("hrImportTextarea").style.display = "none";
+      document.getElementById("parseHrTextarea").style.display = "none";
+      document.getElementById("importHrAll").style.display = "";
+      document.getElementById("importHrSpikes").style.display = "";
+      document.getElementById("hrImportPreview").innerHTML = `
+        <div class="band">
+          <strong>HR Data · ${currentLang === "en" ? "today" : "วันนี้"} ${data.all.length}</strong>
+          <div class="previewlist">
+            ${previewItems.map(item => `<div class="previewrow"><span>${timeText(item.at)}</span><strong>${item.bpm} BPM</strong><span>${hrZoneText(item.bpm)}</span></div>`).join("") || `<div class="empty">${t("noData")}</div>`}
+          </div>
+          <div class="mini" style="margin-top:10px">Resting: ${esc(data.resting ?? "-")} BPM · HRV: ${esc(data.hrv ?? "-")} ms</div>
+        </div>`;
+      openSheet("hrImportSheet");
+    }
+    function showHrImportFallback(message = "") {
+      pendingHrImport = null;
+      document.getElementById("hrImportPreview").innerHTML = message ? `<div class="band warn">${esc(message)}</div>` : "";
+      document.getElementById("hrImportTextarea").style.display = "";
+      document.getElementById("parseHrTextarea").style.display = "";
+      document.getElementById("importHrAll").style.display = "none";
+      document.getElementById("importHrSpikes").style.display = "none";
+      openSheet("hrImportSheet");
+    }
+    async function startHrImport() {
+      try {
+        const text = await navigator.clipboard.readText();
+        previewHrImport(normalizeHrImport(JSON.parse(text)));
+      } catch {
+        showHrImportFallback(t("hrClipboardDenied"));
+      }
+    }
+    function parseHrTextarea() {
+      try {
+        const text = document.getElementById("hrImportTextarea").value.trim();
+        previewHrImport(normalizeHrImport(JSON.parse(text)));
+      } catch {
+        toast(t("hrImportInvalid"));
+      }
+    }
+    function saveImportedHr(mode) {
+      if (!pendingHrImport) return toast(t("hrImportInvalid"));
+      const selected = mode === "spikes" ? pendingHrImport.spikes : pendingHrImport.all;
+      const existing = new Set(events.filter(e => e.type === "hr_elevated").map(e => hrMinuteKey(e.at)));
+      const additions = [];
+      selected.forEach(item => {
+        const key = hrMinuteKey(item.at);
+        if (existing.has(key)) return;
+        existing.add(key);
+        additions.push({ id: uid(), type: "hr_elevated", at: item.at, bpm: item.bpm, zone: item.zone || hrZone(item.bpm), source: "import" });
+      });
+      events = [...additions, ...events];
+      write(EVENT_KEY, events);
+      closeSheets();
+      toast(`${t("hrImported")} · ${additions.length} events`);
+      render();
+    }
 
     function chipHtml(values, selected, mode = "set") {
       return values.map(v => {
@@ -1312,6 +1498,12 @@
     }
     function numbersHtml(selected) {
       return Array.from({ length: 11 }, (_, i) => `<button class="chip ${selected === i ? "on" : ""}" data-value="${i}">${i}</button>`).join("");
+    }
+    function hrChipsHtml(selected) {
+      return HR_CHIPS.map(v => {
+        const value = v === 130 ? 130 : v;
+        return `<button class="chip ${hrZone(value)} ${selected === value ? "on" : ""}" data-value="${value}">${v === 130 ? "130+" : v}</button>`;
+      }).join("");
     }
 
     function primeSheet(id) {
@@ -1346,6 +1538,11 @@
         document.getElementById("bedtime").value = existing?.bedtime || "";
         document.getElementById("waketime").value = existing?.wakeTime || "";
         document.getElementById("napMin").value = existing?.napMinutes ?? "";
+      }
+      if (id === "hrSheet") {
+        selectedHrBpm = 90;
+        document.getElementById("hrChips").innerHTML = hrChipsHtml(selectedHrBpm);
+        document.getElementById("hrZoneLabel").textContent = hrZoneText(selectedHrBpm);
       }
       if (id === "doctorEventSheet") {
         const existing = editingCalendarId ? calEvents.find(e => e.id === editingCalendarId && e.type === "appointment") : null;
@@ -1454,6 +1651,81 @@
     function renderTimeline(target, list) {
       document.getElementById(target).innerHTML = list.length ? timeline(list.map(normalizeEvent)) : `<div class="empty">${esc(t("noData"))}</div>`;
     }
+    function painValueForEvent(e) {
+      if (e.type === "attack_start" || e.type === "headache_phase") return Number(e.severity);
+      if (e.type === "worse") return Number(e.painNow);
+      if (e.type === "improving_phase" || e.type === "improved") return Number(e.painAfter);
+      return NaN;
+    }
+    function painHrTimelineSvg() {
+      const today = todayKey();
+      const painEvents = events
+        .filter(e => ["attack_start", "headache_phase", "worse", "improving_phase", "improved"].includes(e.type) && dateKey(e.at) === today)
+        .map(e => ({ at: e.at, value: painValueForEvent(e) }))
+        .filter(p => Number.isFinite(p.value))
+        .sort((a, b) => new Date(a.at) - new Date(b.at));
+      const hrEvents = events
+        .filter(e => e.type === "hr_elevated" && dateKey(e.at) === today && Number.isFinite(Number(e.bpm)))
+        .map(e => ({ at: e.at, bpm: Number(e.bpm), zone: e.zone || hrZone(e.bpm) }))
+        .sort((a, b) => new Date(a.at) - new Date(b.at));
+      const x = iso => 40 + (eventPercent(iso) / 100) * 320;
+      const painY = v => 130 - (Math.max(0, Math.min(10, v)) / 10) * 100;
+      const hrY = bpm => 130 - ((Math.max(50, Math.min(140, bpm)) - 50) / 90) * 100;
+      const grid = [0, 6, 12, 18, 24].map(h => {
+        const gx = 40 + (h / 24) * 320;
+        return `<line x1="${gx}" y1="24" x2="${gx}" y2="134" stroke="rgba(255,255,255,.08)"/><text class="chartlabel" x="${gx}" y="150" text-anchor="middle">${h}</text>`;
+      }).join("");
+      const watchY = hrY(80);
+      const triggerY = hrY(95);
+      const thresholds = `
+        <line x1="40" y1="${watchY}" x2="360" y2="${watchY}" stroke="var(--yellow)" stroke-dasharray="4 4" opacity=".8"/><text class="chartlabel" x="363" y="${watchY + 4}">80</text>
+        <line x1="40" y1="${triggerY}" x2="360" y2="${triggerY}" stroke="var(--red)" stroke-dasharray="4 4" opacity=".85"/><text class="chartlabel" x="363" y="${triggerY + 4}">95</text>`;
+      const painPts = painEvents.map(p => `${x(p.at)},${painY(p.value)}`).join(" ");
+      const painLine = painEvents.length ? `<polyline points="${painPts}" fill="none" stroke="#ff8faf" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <polygon points="${x(painEvents[0].at)},130 ${painPts} ${x(painEvents[painEvents.length - 1].at)},130" fill="rgba(255,143,175,.15)"/>
+        ${painEvents.map(p => `<circle cx="${x(p.at)}" cy="${painY(p.value)}" r="4" fill="#ff8faf"/><text class="chartnum" x="${x(p.at)}" y="${painY(p.value) - 8}" text-anchor="middle">${p.value}</text>`).join("")}` : `<text class="chartmuted" x="200" y="78" text-anchor="middle">${currentLang === "en" ? "No pain data today" : "ยังไม่มีข้อมูลปวดวันนี้"}</text>`;
+      const hrPts = hrEvents.map(p => `${x(p.at)},${hrY(p.bpm)}`).join(" ");
+      const hrLine = hrEvents.length ? `<polyline points="${hrPts}" fill="none" stroke="#ff7474" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        ${hrEvents.map(p => `<circle cx="${x(p.at)}" cy="${hrY(p.bpm)}" r="6" fill="#ff7474"/><text class="chartnum" x="${x(p.at)}" y="${hrY(p.bpm) - 10}" text-anchor="middle">${p.bpm > 90 ? p.bpm : ""}</text>`).join("")}` : `<text class="chartmuted" x="200" y="104" text-anchor="middle">${currentLang === "en" ? "No HR data · log or import" : "ยังไม่มี HR · กด ❤️ หรือ Import"}</text>`;
+      return `<svg class="chartsvg" viewBox="0 0 400 160" aria-label="pain and heart rate timeline">
+        <text class="chartlabel" x="40" y="16">Pain 0-10</text><text class="chartlabel" x="360" y="16" text-anchor="end">HR 50-140</text>
+        ${grid}
+        <line x1="40" y1="130" x2="360" y2="130" stroke="rgba(255,255,255,.16)"/>
+        <line x1="40" y1="30" x2="40" y2="130" stroke="rgba(255,255,255,.16)"/>
+        <line x1="360" y1="30" x2="360" y2="130" stroke="rgba(255,255,255,.16)"/>
+        ${thresholds}
+        ${painLine}
+        ${hrLine}
+      </svg>`;
+    }
+    function triggerFrequencySvg() {
+      const counts = {};
+      events.filter(e => e.type === "attack_start").forEach(e => detailList(e.triggers).forEach(trigger => counts[trigger] = (counts[trigger] || 0) + 1));
+      const rows = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8);
+      if (!rows.length) return `<svg class="chartsvg" viewBox="0 0 400 220"><text class="chartmuted" x="200" y="110" text-anchor="middle">${currentLang === "en" ? "No trigger data yet" : "ยังไม่มีข้อมูล trigger"}</text></svg>`;
+      const max = Math.max(1, ...rows.map(r => r[1]));
+      const bars = rows.map(([name, count], i) => {
+        const y = 24 + i * 27;
+        const width = (count / max) * 220;
+        return `<text class="chartlabel" x="12" y="${y + 15}">${esc(choiceLabel(name, name))}</text>
+          <rect x="145" y="${y}" width="${width}" height="22" rx="6" fill="rgba(247,200,79,.75)"></rect>
+          <text class="chartnum" x="${150 + width}" y="${y + 15}">${count}</text>`;
+      }).join("");
+      return `<svg class="chartsvg" viewBox="0 0 400 220" aria-label="trigger frequency">${bars}</svg>`;
+    }
+    function renderTimelineCharts() {
+      document.getElementById("timelineCharts").innerHTML = `
+        <div class="chartgrid">
+          <div class="chartcard">
+            <div class="charthead"><div class="charttitle">${currentLang === "en" ? "Pain + HR timeline today" : "กราฟปวด + HR วันนี้"}</div><div class="chartnote">00:00-24:00</div></div>
+            ${painHrTimelineSvg()}
+          </div>
+          <div class="chartcard">
+            <div class="charthead"><div class="charttitle">${currentLang === "en" ? "Trigger frequency" : "trigger ที่เจอบ่อย"}</div><div class="chartnote">${currentLang === "en" ? "All migraine starts" : "จาก attack ทั้งหมด"}</div></div>
+            ${triggerFrequencySvg()}
+          </div>
+        </div>`;
+    }
     function renderPatternGraph(target, list) {
       const items = list.map(normalizeEvent).filter(e => e.at);
       const days = graphDays(items).slice(0, 7);
@@ -1465,6 +1737,7 @@
             ${legendItem("worse", currentLang === "en" ? "Worse" : "หนักขึ้น")}
             ${legendItem("improved", currentLang === "en" ? "Better" : "ดีขึ้น")}
             ${legendItem("medication", currentLang === "en" ? "Meds" : "ยา")}
+            ${legendItem("hr_elevated", "HR")}
           </div>
           ${days.map(graphDay).join("")}
         </div>` : `<div class="empty">${esc(t("noData"))}</div>`;
@@ -1638,7 +1911,7 @@
       </div>`;
     }
     function graphType(type) {
-      return ["prodrome", "attack_start", "worse", "improved", "medication", "sleep"].includes(type) ? type : "event";
+      return ["prodrome", "attack_start", "worse", "improved", "medication", "sleep", "hr_elevated"].includes(type) ? type : "event";
     }
     function eventPercent(iso) {
       const d = new Date(iso);
@@ -1705,6 +1978,17 @@
         label: "medication",
         details: [e.group ? groupLabel(e.group) : "", e.override ? "override" : ""].filter(Boolean)
       };
+      if (e.type === "hr_elevated") return {
+        ...base,
+        title: currentLang === "en" ? "Heart rate elevated" : "HR สูง",
+        icon: "❤️",
+        label: "heart rate",
+        details: [
+          Number.isFinite(Number(e.bpm)) ? `${e.bpm} BPM` : "",
+          e.zone ? hrZoneText(Number(e.bpm || 0)) : "",
+          e.source ? `source: ${e.source}` : ""
+        ].filter(Boolean)
+      };
       if (e.type === "sleep") return {
         ...base,
         title: currentLang === "en" ? "Sleep / Morning" : "Sleep / เช้า",
@@ -1749,7 +2033,7 @@
                 </div>
                 ${detailList(e.details).length ? `<div class="detailchips">${detailList(e.details).map(d => `<span class="detailchip">${esc(d)}</span>`).join("")}</div>` : ""}
                 ${e.note ? `<div class="eventnote">${esc(e.note)}</div>` : ""}
-                ${e.gap ? `<div class="gapnote">ก่อนหน้านี้ ${esc(e.gap)}</div>` : ""}
+                ${e.gap ? `<div class="gapnote">${currentLang === "en" ? "Previous" : "ก่อนหน้านี้"} ${esc(e.gap)}</div>` : ""}
                 ${e.id ? `<div class="eventactions">
                   <button class="eventaction" data-event-action="note" data-source="${esc(e.source || "event")}" data-id="${esc(e.id)}" data-at="${esc(e.at)}" data-med="${esc(e.medId || "")}">${currentLang === "en" ? "Note" : "โน้ต"}</button>
                   <button class="eventaction danger" data-event-action="delete" data-source="${esc(e.source || "event")}" data-id="${esc(e.id)}" data-at="${esc(e.at)}" data-med="${esc(e.medId || "")}">${currentLang === "en" ? "Delete" : "ลบ"}</button>
@@ -1776,10 +2060,10 @@
       return arr.length ? " · " + arr.join(", ") : "";
     }
     function iconForType(type) {
-      return ({ prodrome: "⚡", attack_start: "💥", worse: "📈", improved: "😌", medication: "💊", sleep: "🌅", calendar: "📅" })[type] || "•";
+      return ({ prodrome: "⚡", attack_start: "💥", worse: "📈", improved: "😌", medication: "💊", sleep: "🌅", hr_elevated: "❤️", calendar: "📅" })[type] || "•";
     }
     function labelForType(type) {
-      return ({ prodrome: "prodrome", attack_start: "migraine attack", worse: "worse", improved: "improved", medication: "medication", sleep: "sleep", calendar: "calendar" })[type] || "event";
+      return ({ prodrome: "prodrome", attack_start: "migraine attack", worse: "worse", improved: "improved", medication: "medication", sleep: "sleep", hr_elevated: "heart rate", calendar: "calendar" })[type] || "event";
     }
     function dayLabel(key) {
       if (key === todayKey()) return currentLang === "en" ? "Today" : "วันนี้";
@@ -1789,10 +2073,10 @@
     function gapText(fromIso, toIso) {
       const mins = Math.round((new Date(toIso) - new Date(fromIso)) / 60000);
       if (!Number.isFinite(mins) || mins <= 0) return "";
-      if (mins < 60) return `${mins} นาที`;
+      if (mins < 60) return `${mins}${currentLang === "en" ? "m" : " นาที"}`;
       const h = Math.floor(mins / 60);
       const m = mins % 60;
-      return m ? `${h} ชม. ${m} นาที` : `${h} ชม.`;
+      return m ? `${h}${currentLang === "en" ? "h" : " ชม."} ${m}${currentLang === "en" ? "m" : " นาที"}` : `${h}${currentLang === "en" ? "h" : " ชม."}`;
     }
 
     function renderReminders() {
@@ -2116,6 +2400,7 @@
       setHtml('[data-open="prodrome"].quicksmall', `<span>⚡</span>${t("prodromeShort")}<small>${t("prodromeSub")}</small>`);
       setHtml('[data-screen="meds"].quicksmall', `<span>💊</span>${t("medsShort")}<small>${t("medsSub")}</small>`);
       setHtml('[data-open="sleep"].quicksmall', `<span>🌅</span>${t("morningShort")}<small>${t("morningSub")}</small>`);
+      setHtml('[data-open="hr"].quicksmall', `<span>❤️</span>${t("hrShort")}<small>${t("hrSub")}</small>`);
       setText("#today .label", t("todayTimeline"));
       setText("#meds .label", t("medHistory"));
       setText("#timeline .label", t("patternGraph"));
@@ -2150,6 +2435,15 @@
       setText("#sleepSheet .sheettitle", t("sleepTitle"));
       setText("#sleepSheet .label", t("sleepTimes"));
       setText("#saveSleep", t("saveSleep"));
+      setText("#hrSheet .sheettitle", t("hrSheetTitle"));
+      setText("#hrSheetLabel", t("hrSheetLabel"));
+      setText("#saveHr", t("saveHr"));
+      setText("#hrImportSheet .sheettitle", t("hrImportTitle"));
+      setText("#importHrAll", t("hrImportAll"));
+      setText("#importHrSpikes", t("hrImportSpikes"));
+      setText("#parseHrTextarea", t("hrPreviewButton"));
+      const hrText = document.getElementById("hrImportTextarea");
+      if (hrText) hrText.placeholder = t("hrPaste");
       setText("#doctorEventSheet .sheettitle", t("doctorSheet"));
       setText("#refillEventSheet .sheettitle", t("refillSheet"));
       const nap = document.getElementById("napMin");
@@ -2164,6 +2458,7 @@
       if (medEndDate) medEndDate.placeholder = currentLang === "en" ? "Medication runs out date" : "วันยาหมด";
       const refillNote = document.getElementById("refillNote");
       if (refillNote) refillNote.placeholder = currentLang === "en" ? "Medication / note" : "ยา / note";
+      setHtml("#importHrBtn", `<span class="ico">📲</span><strong>${t("hrImport")}</strong><small>${t("hrImportSub")}</small>`);
       document.querySelectorAll(".secondary[data-close]").forEach(btn => btn.textContent = t("cancel"));
     }
 
@@ -2177,6 +2472,7 @@
       const todayEvents = sorted(events).filter(e => dateKey(e.at) === todayKey());
       renderTimeline("todayTimeline", todayEvents);
       const allEvents = sorted(events);
+      renderTimelineCharts();
       renderPatternGraph("patternGraph", allEvents);
       renderGraphDashboard();
       renderTimeline("allTimeline", allEvents);
@@ -2223,6 +2519,21 @@
       document.getElementById("importFileInput").onchange = e => {
         importBackupFile(e.target.files?.[0]);
         e.target.value = "";
+      };
+      document.getElementById("importHrBtn").onclick = startHrImport;
+      document.getElementById("parseHrTextarea").onclick = parseHrTextarea;
+      document.getElementById("importHrAll").onclick = () => saveImportedHr("all");
+      document.getElementById("importHrSpikes").onclick = () => saveImportedHr("spikes");
+      document.getElementById("hrChips").onclick = e => {
+        const b = e.target.closest(".chip"); if (!b) return;
+        selectedHrBpm = Number(b.dataset.value);
+        document.getElementById("hrChips").innerHTML = hrChipsHtml(selectedHrBpm);
+        document.getElementById("hrZoneLabel").textContent = hrZoneText(selectedHrBpm);
+      };
+      document.getElementById("saveHr").onclick = () => {
+        addEvent({ type: "hr_elevated", bpm: selectedHrBpm, zone: hrZone(selectedHrBpm), source: "manual" });
+        closeSheets();
+        toast(`${t("hrSaved")} ${selectedHrBpm} BPM`);
       };
       document.getElementById("emergencySeverityChips").onclick = e => {
         const b = e.target.closest(".chip"); if (!b) return;
