@@ -1062,7 +1062,7 @@
                   <div class="eventicon">${esc(e.icon || iconForType(e.type))}</div>
                   <div><div class="etitle">${esc(e.title)}</div><div class="etype">${esc(e.label || labelForType(e.type))}</div></div>
                 </div>
-                ${e.details?.length ? `<div class="detailchips">${e.details.map(d => `<span class="detailchip">${esc(d)}</span>`).join("")}</div>` : ""}
+                ${detailList(e.details).length ? `<div class="detailchips">${detailList(e.details).map(d => `<span class="detailchip">${esc(d)}</span>`).join("")}</div>` : ""}
                 ${e.gap ? `<div class="gapnote">ก่อนหน้านี้ ${esc(e.gap)}</div>` : ""}
               </div>
             </div>`).join("")}
