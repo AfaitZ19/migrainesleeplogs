@@ -138,6 +138,7 @@
     }
     .event.medication .eventcard { border-left-color: var(--yellow); background: linear-gradient(145deg, rgba(247,200,79,.11), var(--panel)); }
     .event.attack_start .eventcard { border-left-color: var(--pink); background: linear-gradient(145deg, rgba(255,143,175,.14), var(--panel)); }
+    .event.worse .eventcard { border-left-color: var(--red); background: linear-gradient(145deg, rgba(255,116,116,.14), var(--panel)); }
     .event.prodrome .eventcard { border-left-color: var(--blue); background: linear-gradient(145deg, rgba(119,187,255,.12), var(--panel)); }
     .event.improved .eventcard { border-left-color: var(--green); background: linear-gradient(145deg, rgba(97,211,148,.12), var(--panel)); }
     .event.sleep .eventcard { border-left-color: var(--blue); }
@@ -169,6 +170,7 @@
     .legenddot.medication { background: var(--yellow); }
     .legenddot.prodrome { background: var(--blue); }
     .legenddot.attack_start { background: var(--pink); }
+    .legenddot.worse { background: var(--red); }
     .legenddot.improved { background: var(--green); }
     .graphday { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; }
     .graphdayhead { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; margin-bottom: 10px; }
@@ -203,6 +205,7 @@
     .mark.medication { background: var(--yellow); top: 68%; width: 24px; height: 24px; font-size: 12px; }
     .mark.prodrome { background: var(--blue); top: 34%; }
     .mark.attack_start { background: var(--pink); width: 40px; height: 40px; font-size: 20px; }
+    .mark.worse { background: var(--red); top: 50%; width: 34px; height: 34px; }
     .mark.improved { background: var(--green); top: 34%; }
     .mark.sleep { background: var(--blue); opacity: .72; width: 25px; height: 25px; font-size: 13px; }
     .mark.event { background: var(--violet); }
@@ -324,7 +327,8 @@
           <button class="bigbtn yellow wide" data-screen="meds"><span class="ico">💊</span><strong>กินยาแล้ว</strong><small>แตะชื่อยา = บันทึกทันที</small></button>
           <button class="bigbtn violet" data-open="prodrome"><span class="ico">⚡</span><strong>เริ่มแปลก</strong><small>บันทึกอาการนำ</small></button>
           <button class="bigbtn pink" data-open="attack"><span class="ico">💥</span><strong>เริ่มปวดหัว</strong><small>เลือกไม่กี่อย่าง</small></button>
-          <button class="bigbtn green" id="improveQuick"><span class="ico">😌</span><strong>ดีขึ้นแล้ว</strong><small>แตะเมื่ออาการลง</small></button>
+          <button class="bigbtn pink" id="worseQuick"><span class="ico">📈</span><strong>อาการหนักขึ้น</strong><small>ปวดเพิ่ม / อาการเพิ่ม</small></button>
+          <button class="bigbtn green" id="improveQuick"><span class="ico">😌</span><strong>ดีขึ้น/หายแล้ว</strong><small>เลือก 0 ถ้าหายปวด</small></button>
           <button class="bigbtn blue" data-open="sleep"><span class="ico">🌅</span><strong>ตื่นมาปวดหัวไหม</strong><small>sleep log</small></button>
         </div>
 
@@ -433,10 +437,23 @@
   <div class="sheetwrap" id="improveSheet">
     <div class="sheet">
       <div class="handle"></div>
-      <div class="sheethead"><div class="sheettitle">😌 ดีขึ้นแล้ว</div><button class="x" data-close>×</button></div>
-      <div class="label">ตอนนี้เหลือปวดกี่คะแนน</div>
+      <div class="sheethead"><div class="sheettitle">😌 ดีขึ้น/หายแล้ว</div><button class="x" data-close>×</button></div>
+      <div class="label">ตอนนี้เหลือปวดกี่คะแนน (0 = หายแล้ว)</div>
       <div class="chips" id="improvePainChips"></div>
-      <button class="primary" id="saveImproved">บันทึกว่าดีขึ้นแล้ว</button>
+      <button class="primary" id="saveImproved">บันทึกดีขึ้น/หายแล้ว</button>
+      <button class="secondary" data-close>ยกเลิก</button>
+    </div>
+  </div>
+
+  <div class="sheetwrap" id="worseSheet">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheethead"><div class="sheettitle">📈 อาการหนักขึ้น</div><button class="x" data-close>×</button></div>
+      <div class="label">ตอนนี้ปวดกี่คะแนน</div>
+      <div class="chips" id="worsePainChips"></div>
+      <div class="label">มีอะไรเพิ่ม</div>
+      <div class="chips" id="worseSymptomChips"></div>
+      <button class="primary" id="saveWorse">บันทึกอาการหนักขึ้น</button>
       <button class="secondary" data-close>ยกเลิก</button>
     </div>
   </div>
@@ -531,7 +548,9 @@
       ["nausea", "คลื่นไส้"]
     ];
     const TRIGGERS = ["ไม่รู้", "แสง", "แดด", "ร้อน", "เสียงดัง", "จอ/คอม", "นอนน้อย", "เครียด/นอย", "กลิ่น", "เดินทาง", "กินข้าวช้า", "อากาศเปลี่ยน"];
+    const WORSE_SYMPTOMS = [["flashingLights", "แสงแวบ"], ["blurryVision", "ตาเบลอ"], ["nausea", "จะอ้วก/คลื่นไส้"], ["dizzy", "เวียนหัว"], ["brainFog", "สมองช้า"], ["neck", "คอแข็ง"]];
     const WAKE_HEADACHE = ["ไม่ปวด", "ปวดนิดหน่อย", "ปวดปานกลาง", "ปวดมาก"];
+    const WAKE_HEADACHE_SEVERITY = { "ปวดนิดหน่อย": 3, "ปวดปานกลาง": 6, "ปวดมาก": 8 };
     const CLINICAL = {
       "หาวบ่อย": "frequent yawning / prodrome",
       "ง่วงผิดปกติ": "abnormal somnolence / prodrome",
@@ -572,6 +591,8 @@
     let selectedAttackSymptoms = new Set();
     let selectedTriggers = new Set();
     let selectedImprovePain = 2;
+    let selectedWorsePain = 8;
+    let selectedWorseSymptoms = new Set();
     let selectedWakeHeadache = "ไม่ปวด";
 
     function read(key, fallback) {
@@ -771,6 +792,10 @@
       }
       return active;
     }
+    function activeAttackToday() {
+      const attack = activeAttack();
+      return attack && dateKey(attack.at) === todayKey() ? attack : null;
+    }
     function lastBefore(type, iso) {
       return events
         .filter(e => e.type === type && new Date(e.at) <= new Date(iso))
@@ -881,6 +906,12 @@
       if (id === "improveSheet") {
         selectedImprovePain = 2;
         document.getElementById("improvePainChips").innerHTML = numbersHtml(selectedImprovePain);
+      }
+      if (id === "worseSheet") {
+        selectedWorsePain = activeAttack()?.severity ? Math.min(10, Number(activeAttack().severity) + 1) : 8;
+        selectedWorseSymptoms = new Set();
+        document.getElementById("worsePainChips").innerHTML = numbersHtml(selectedWorsePain);
+        document.getElementById("worseSymptomChips").innerHTML = chipHtml(WORSE_SYMPTOMS, selectedWorseSymptoms);
       }
       if (id === "sleepSheet") {
         selectedWakeHeadache = "ไม่ปวด";
@@ -1001,6 +1032,7 @@
           <div class="legend">
             ${legendItem("prodrome", "เริ่มแปลก")}
             ${legendItem("attack_start", "ปวดหัว")}
+            ${legendItem("worse", "หนักขึ้น")}
             ${legendItem("improved", "ดีขึ้น")}
             ${legendItem("medication", "ยา")}
           </div>
@@ -1052,7 +1084,7 @@
       </div>`;
     }
     function graphType(type) {
-      return ["prodrome", "attack_start", "improved", "medication", "sleep"].includes(type) ? type : "event";
+      return ["prodrome", "attack_start", "worse", "improved", "medication", "sleep"].includes(type) ? type : "event";
     }
     function eventPercent(iso) {
       const d = new Date(iso);
@@ -1093,13 +1125,23 @@
       };
       if (e.type === "improved") return {
         ...base,
-        title: "ดีขึ้นแล้ว",
+        title: Number(e.painAfter) === 0 ? "หายปวดแล้ว" : "ดีขึ้นแล้ว",
         icon: "😌",
         label: "improved",
         details: [
           Number.isFinite(Number(e.painAfter)) ? `เหลือ ${e.painAfter}/10` : "",
           e.attackDurationMin != null ? `ปวดนาน ${fmtMins(e.attackDurationMin)}` : "",
           e.medToImprovementMin != null ? `ยา→ดีขึ้น ${fmtMins(e.medToImprovementMin)}` : ""
+        ].filter(Boolean)
+      };
+      if (e.type === "worse") return {
+        ...base,
+        title: "อาการหนักขึ้น",
+        icon: "📈",
+        label: "worse",
+        details: [
+          Number.isFinite(Number(e.painNow)) ? `ปวด ${e.painNow}/10` : "",
+          ...detailList(e.symptoms)
         ].filter(Boolean)
       };
       if (e.type === "medication") return {
@@ -1180,10 +1222,10 @@
       return arr.length ? " · " + arr.join(", ") : "";
     }
     function iconForType(type) {
-      return ({ prodrome: "⚡", attack_start: "💥", improved: "😌", medication: "💊", sleep: "🌅", calendar: "📅" })[type] || "•";
+      return ({ prodrome: "⚡", attack_start: "💥", worse: "📈", improved: "😌", medication: "💊", sleep: "🌅", calendar: "📅" })[type] || "•";
     }
     function labelForType(type) {
-      return ({ prodrome: "prodrome", attack_start: "migraine attack", improved: "improved", medication: "medication", sleep: "sleep", calendar: "calendar" })[type] || "event";
+      return ({ prodrome: "prodrome", attack_start: "migraine attack", worse: "worse", improved: "improved", medication: "medication", sleep: "sleep", calendar: "calendar" })[type] || "event";
     }
     function dayLabel(key) {
       if (key === todayKey()) return "วันนี้";
@@ -1247,6 +1289,7 @@
 
     function renderReport() {
       const attacks = events.filter(e => e.type === "attack_start");
+      const worseEvents = events.filter(e => e.type === "worse");
       const improved = events.filter(e => e.type === "improved");
       const sortedAttacks = [...attacks].sort((a, b) => new Date(b.at) - new Date(a.at));
       const avgSeverity = attacks.length ? (attacks.reduce((s, a) => s + Number(a.severity || 0), 0) / attacks.length).toFixed(1) : "-";
@@ -1256,6 +1299,7 @@
       const sleepDurations = sleepLogs.map(l => l.totalSleepMin).filter(v => Number.isFinite(Number(v)));
       const avgSleep = sleepDurations.length ? fmtMins(Math.round(sleepDurations.reduce((s, v) => s + Number(v), 0) / sleepDurations.length)) : "-";
       const wakeHeadache = sleepLogs.filter(s => s.wakeHeadache && s.wakeHeadache !== "ไม่ปวด").length;
+      const wakeAttacks = attacks.filter(a => a.wakeHeadache).length;
       const light = attacks.filter(a => a.flashingLights || a.aura).length;
       const prodromeCounts = {};
       events.filter(e => e.type === "prodrome").forEach(e => (e.symptoms || []).forEach(s => prodromeCounts[s] = (prodromeCounts[s] || 0) + 1));
@@ -1294,6 +1338,7 @@
             ${metric(avgDur, "average duration")}
             ${metric(`${visualSymptoms}/${attacks.length || 0}`, "visual aura / disturbance")}
             ${metric(`${wakeHeadache}/${sleepLogs.length || 0}`, "wake-up headache")}
+            ${metric(worseEvents.length, "worsening logs")}
             ${metric(avgSleep, "average sleep")}
             ${metric(medLogs.length, "medication logs")}
             ${metric(nurtec, "Nurtec doses")}
@@ -1306,6 +1351,7 @@
             <div class="reportitem"><strong>Sequence to watch:</strong> prodrome / mood-cognitive-autonomic symptoms → visual symptoms → migraine attack → exhaustion or improvement.</div>
             <div class="reportitem"><strong>Common headache side:</strong> ${esc(commonSide)}</div>
             <div class="reportitem"><strong>Associated symptoms:</strong> visual disturbance ${visualSymptoms}/${attacks.length || 0}, nausea ${nausea}/${attacks.length || 0}</div>
+            <div class="reportitem"><strong>Wake-up migraine entries:</strong> ${wakeAttacks}</div>
           </div>
         </div>
 
@@ -1355,6 +1401,15 @@
             <div class="reportitem">Average sleep duration: <strong>${esc(avgSleep)}</strong></div>
             <div class="reportitem">Wake-up headache: <strong>${wakeHeadache}/${sleepLogs.length || 0}</strong> mornings logged</div>
           </div>
+        </div>
+
+        <div class="reportsection">
+          <h2>Worsening During Attack</h2>
+          ${worseEvents.length ? `<div class="reporttable">${worseEvents.slice(0, 8).map(e => `
+            <div class="reportrow two">
+              <strong>${esc(dateText(e.at))} ${esc(timeText(e.at))}</strong>
+              <div class="reportcell">pain increased/current ${esc(e.painNow ?? "-")}/10${detailList(e.symptoms).length ? "; " + esc(detailList(e.symptoms).join(", ")) : ""}</div>
+            </div>`).join("")}</div>` : `<div class="empty">No worsening events recorded yet</div>`}
         </div>
 
         <div class="reportsection">
@@ -1426,7 +1481,9 @@
       renderTimeline("allTimeline", allEvents);
       renderReport();
       renderBackupStatus();
-      document.getElementById("improveQuick").style.opacity = activeAttack() ? "1" : ".55";
+      const hasActiveAttack = activeAttack();
+      document.getElementById("improveQuick").style.opacity = hasActiveAttack ? "1" : ".55";
+      document.getElementById("worseQuick").style.opacity = hasActiveAttack ? "1" : ".55";
     }
 
     function setup() {
@@ -1447,6 +1504,7 @@
         importBackupFile(e.target.files?.[0]);
         e.target.value = "";
       };
+      document.getElementById("worseQuick").onclick = () => activeAttack() ? openSheet("worseSheet") : toast("ยังไม่มี attack ที่ active");
 
       document.getElementById("prodromeChips").onclick = e => {
         const b = e.target.closest(".chip"); if (!b) return;
@@ -1522,6 +1580,28 @@
         });
         closeSheets(); toast("ดีขึ้นแล้ว");
       };
+      document.getElementById("worsePainChips").onclick = e => {
+        const b = e.target.closest(".chip"); if (!b) return;
+        selectedWorsePain = Number(b.dataset.value);
+        document.getElementById("worsePainChips").innerHTML = numbersHtml(selectedWorsePain);
+      };
+      document.getElementById("worseSymptomChips").onclick = e => {
+        const b = e.target.closest(".chip"); if (!b) return;
+        const v = b.dataset.value;
+        selectedWorseSymptoms.has(v) ? selectedWorseSymptoms.delete(v) : selectedWorseSymptoms.add(v);
+        b.classList.toggle("on");
+      };
+      document.getElementById("saveWorse").onclick = () => {
+        const attack = activeAttack();
+        if (!attack) return toast("ยังไม่มี attack ที่ active");
+        addEvent({
+          type: "worse",
+          attackId: attack.id,
+          painNow: selectedWorsePain,
+          symptoms: [...selectedWorseSymptoms].map(v => (WORSE_SYMPTOMS.find(x => x[0] === v)?.[1] || v))
+        });
+        closeSheets(); toast("บันทึกอาการหนักขึ้นแล้ว");
+      };
 
       document.getElementById("wakeHeadacheChips").onclick = e => {
         const b = e.target.closest(".chip"); if (!b) return;
@@ -1538,6 +1618,18 @@
         sleepLogs.unshift(entry);
         write(SLEEP_KEY, sleepLogs);
         events.unshift({ id: uid(), type: "sleep", ...entry });
+        if (selectedWakeHeadache !== "ไม่ปวด" && !activeAttackToday()) {
+          events.unshift({
+            id: uid(),
+            type: "attack_start",
+            at: new Date(new Date(entry.at).getTime() + 1).toISOString(),
+            side: "ตื่นมาก็ปวด",
+            severity: WAKE_HEADACHE_SEVERITY[selectedWakeHeadache] || 5,
+            wakeHeadache: selectedWakeHeadache,
+            note: "เริ่มจากตื่นมาปวดหัว",
+            prodromeToAttackMin: null
+          });
+        }
         write(EVENT_KEY, events);
         closeSheets(); toast("บันทึก sleep แล้ว"); render();
       };
