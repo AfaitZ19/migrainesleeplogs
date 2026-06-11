@@ -1406,6 +1406,40 @@
       toast(mode === "replace" ? (currentLang === "en" ? "Imported: replace" : "Import แล้ว: replace") : (currentLang === "en" ? "Imported: merge" : "Import แล้ว: merge"));
       render();
     }
+    function isoFromShortcutTime(value, fallbackDate) {
+      if (!value) return null;
+      if (typeof value === "string" && /^\d{1,2}:\d{2}$/.test(value.trim()) && fallbackDate) {
+        const [h, m] = value.trim().split(":").map(Number);
+        const d = new Date(`${fallbackDate}T00:00:00`);
+        d.setHours(h, m, 0, 0);
+        return d.toISOString();
+      }
+      const d = new Date(value);
+      return Number.isNaN(d.getTime()) ? null : d.toISOString();
+    }
+    function normalizeHrSample(item, fallbackDate) {
+      const at = isoFromShortcutTime(item.at || item.date || item.time || item.timestamp || item.startDate, fallbackDate);
+      const bpm = Number(item.bpm ?? item.heartRate ?? item.value ?? item.hr);
+      if (!at || !Number.isFinite(bpm)) return null;
+      return { at, bpm, zone: item.zone || hrZone(bpm), source: "import" };
+    }
+    function normalizeShortcutSleep(raw) {
+      if (!raw?.sleep || !raw.date) return null;
+      const sleep = raw.sleep;
+      const totalSleepMin = Number(sleep.totalSleepMinutes ?? sleep.totalSleepMin);
+      return {
+        date: raw.date,
+        at: raw.syncedAt ? new Date(raw.syncedAt).toISOString() : nowIso(),
+        wakeHeadache: "ไม่ปวด",
+        bedtime: sleep.bedtime || "",
+        wakeTime: sleep.wakeTime || "",
+        totalSleepMin: Number.isFinite(totalSleepMin) ? totalSleepMin : null,
+        napMinutes: 0,
+        hrv: raw.hrv ?? null,
+        restingHR: raw.restingHR ?? raw.restingHr ?? null,
+        source: "import"
+      };
+    }
     function normalizeHrImport(raw) {
       if (!raw || raw.type !== "hr_health_sync") throw new Error("invalid type");
       const source = Array.isArray(raw.readings) ? raw.readings
@@ -1413,19 +1447,15 @@
         : Array.isArray(raw.data) ? raw.data
         : Array.isArray(raw.spikes) ? raw.spikes
         : [];
-      const all = source.map(item => {
-        const at = item.at || item.date || item.time || item.timestamp || item.startDate;
-        const bpm = Number(item.bpm ?? item.heartRate ?? item.value ?? item.hr);
-        if (!at || !Number.isFinite(bpm)) return null;
-        return { at: new Date(at).toISOString(), bpm, zone: item.zone || hrZone(bpm), source: "import" };
-      }).filter(Boolean);
-      const spikes = (Array.isArray(raw.spikes) ? raw.spikes : all.filter(x => x.bpm >= 95)).map(item => {
-        const at = item.at || item.date || item.time || item.timestamp || item.startDate;
-        const bpm = Number(item.bpm ?? item.heartRate ?? item.value ?? item.hr);
-        if (!at || !Number.isFinite(bpm)) return null;
-        return { at: new Date(at).toISOString(), bpm, zone: item.zone || hrZone(bpm), source: "import" };
-      }).filter(Boolean);
-      return { all, spikes, resting: raw.resting ?? raw.restingHr ?? raw.restingHeartRate ?? null, hrv: raw.hrv ?? raw.hrvMs ?? null };
+      const all = source.map(item => normalizeHrSample(item, raw.date)).filter(Boolean);
+      const spikes = (Array.isArray(raw.spikes) ? raw.spikes.map(item => normalizeHrSample(item, raw.date)).filter(Boolean) : all.filter(x => x.bpm > 80));
+      return {
+        all,
+        spikes,
+        sleep: normalizeShortcutSleep(raw),
+        resting: raw.restingHR ?? raw.resting ?? raw.restingHr ?? raw.restingHeartRate ?? null,
+        hrv: raw.hrv ?? raw.hrvMs ?? null
+      };
     }
     function previewHrImport(data) {
       pendingHrImport = data;
@@ -1440,6 +1470,7 @@
           <div class="previewlist">
             ${previewItems.map(item => `<div class="previewrow"><span>${timeText(item.at)}</span><strong>${item.bpm} BPM</strong><span>${hrZoneText(item.bpm)}</span></div>`).join("") || `<div class="empty">${t("noData")}</div>`}
           </div>
+          ${data.sleep ? `<div class="mini" style="margin-top:10px">Sleep: ${esc(data.sleep.totalSleepMin ?? "-")} min · ${esc(data.sleep.bedtime || "-")} → ${esc(data.sleep.wakeTime || "-")}</div>` : ""}
           <div class="mini" style="margin-top:10px">Resting: ${esc(data.resting ?? "-")} BPM · HRV: ${esc(data.hrv ?? "-")} ms</div>
         </div>`;
       openSheet("hrImportSheet");
@@ -1481,6 +1512,15 @@
         additions.push({ id: uid(), type: "hr_elevated", at: item.at, bpm: item.bpm, zone: item.zone || hrZone(item.bpm), source: "import" });
       });
       events = [...additions, ...events];
+      if (mode === "all" && pendingHrImport.sleep) {
+        const prior = sleepLogs.find(s => s.date === pendingHrImport.sleep.date);
+        const entry = { ...pendingHrImport.sleep, id: prior?.id || uid(), wakeHeadache: prior?.wakeHeadache || pendingHrImport.sleep.wakeHeadache, note: prior?.note || "" };
+        sleepLogs = sleepLogs.filter(s => s.date !== entry.date);
+        sleepLogs.unshift(entry);
+        events = events.filter(e => !(e.type === "sleep" && dateKey(e.at) === entry.date));
+        events.unshift({ id: entry.id, type: "sleep", ...entry });
+        write(SLEEP_KEY, sleepLogs);
+      }
       write(EVENT_KEY, events);
       closeSheets();
       toast(`${t("hrImported")} · ${additions.length} events`);
@@ -2146,6 +2186,7 @@
       const nurtec = medLogs.filter(m => m.medId === "nurtec75").length;
       const sleepDurations = sleepLogs.map(l => l.totalSleepMin).filter(v => Number.isFinite(Number(v)));
       const avgSleep = sleepDurations.length ? fmtMins(Math.round(sleepDurations.reduce((s, v) => s + Number(v), 0) / sleepDurations.length)) : "-";
+      const latestSleepHealth = [...sleepLogs].filter(s => s.hrv != null || s.restingHR != null).sort((a, b) => new Date(b.at) - new Date(a.at))[0];
       const wakeHeadache = sleepLogs.filter(s => s.wakeHeadache && s.wakeHeadache !== "ไม่ปวด").length;
       const wakeAttacks = attacks.filter(a => a.wakeHeadache).length;
       const light = attacks.filter(a => a.flashingLights || a.aura).length;
@@ -2264,6 +2305,7 @@
           <div class="reportlist">
             <div class="reportitem">Average sleep duration: <strong>${esc(avgSleep)}</strong></div>
             <div class="reportitem">Wake-up headache: <strong>${wakeHeadache}/${sleepLogs.length || 0}</strong> mornings logged</div>
+            ${latestSleepHealth ? `<div class="reportitem">Latest imported HRV / resting HR: <strong>${esc(latestSleepHealth.hrv ?? "-")} ms / ${esc(latestSleepHealth.restingHR ?? "-")} BPM</strong></div>` : ""}
           </div>
         </div>
 
