@@ -985,14 +985,16 @@
       { group: "เช้า (หลังอาหารเช้า)", due: "09:00", meds: [
         { id: "methylphenidate10x2_morning", name: "Methylphenidate 10 mg x 2 เม็ด", dose: "รวม 20 mg" },
         { id: "fluoxetine20x2_morning", name: "Fluoxetine 20 mg x 2 เม็ด", dose: "รวม 40 mg" },
-        { id: "propranolol40_morning", name: "Propranolol 40 mg x 1 เม็ด", dose: "MODIFIED · อ.โบว์ · เดิม 10 mg" }
+        { id: "propranolol10_morning", name: "Propranolol 10 mg x 1 เม็ด", dose: "TRANSITION · ใช้ถึงเช้า 23/06/2026", endDate: "2026-06-23" },
+        { id: "propranolol40_morning", name: "Propranolol 40 mg x 1 เม็ด", dose: "MODIFIED · เริ่มเช้า 24/06/2026", startDate: "2026-06-24" }
       ]},
       { group: "กลางวัน (หลังอาหารกลางวัน)", due: "13:00", meds: [
         { id: "methylphenidate10x2_midday", name: "Methylphenidate 10 mg x 2 เม็ด", dose: "รวม 20 mg" }
       ]},
       { group: "เย็น (หลังอาหารเย็น)", due: "18:00", meds: [
         { id: "methylphenidate10x2_evening", name: "Methylphenidate 10 mg x 2 เม็ด", dose: "รวม 20 mg" },
-        { id: "propranolol40_evening", name: "Propranolol 40 mg x 1 เม็ด", dose: "MODIFIED · อ.โบว์ · เดิม 10 mg" }
+        { id: "propranolol10_evening", name: "Propranolol 10 mg x 1 เม็ด", dose: "TRANSITION · ใช้ถึงเย็น 22/06/2026", endDate: "2026-06-22" },
+        { id: "propranolol40_evening", name: "Propranolol 40 mg x 1 เม็ด", dose: "MODIFIED · เริ่มเย็น 23/06/2026", startDate: "2026-06-23" }
       ]},
       { group: "20:00", due: "20:00", meds: [
         { id: "circadin2_half_2000", name: "Circadin (Melatonin) 2 mg x 1/2 เม็ด", dose: "NEW · อ.โบว์" }
@@ -1026,7 +1028,7 @@
       doctor: "อ.โบว์",
       clinic: "Sleep Medicine",
       new: ["Nuvigil (Armodafinil) 150 mg", "Circadin (Melatonin) 2 mg 1/2 เม็ด 20:00", "Depakine Chrono 500 mg 1/2 เม็ด ก่อนนอน"],
-      modified: ["Propranolol 10 mg BID → 40 mg BID", "Amitriptyline 25 mg → 50 mg ก่อนนอน"],
+      modified: ["Propranolol transition: 10 mg ถึงเช้า 23/06/2026; เริ่ม 40 mg เย็น 23/06/2026", "Amitriptyline 25 mg → 50 mg ก่อนนอน"],
       continue: ["Fluoxetine 40 mg · อ.คมสันต์", "Methylphenidate 20 mg · อ.คมสันต์"],
       review: ["Pregabalin 75 mg", "Flunarizine 5 mg"],
       discontinued: ["Nurtec · dose สุดท้าย 23/06/2026 แล้วหยุด"]
@@ -1286,6 +1288,16 @@
     function medId(med) { return Array.isArray(med) ? med[0] : med.id; }
     function medLabel(med) { return Array.isArray(med) ? med[1] : med.name; }
     function medDose(med) { return Array.isArray(med) ? (med[2] || "") : (med.dose || ""); }
+    function medById(id) {
+      for (const group of MED_SCHEDULE) for (const med of group.meds) if (medId(med) === id) return med;
+      return null;
+    }
+    function medActiveOnDate(med, key = todayKey()) {
+      if (!med) return false;
+      if (med.startDate && key < med.startDate) return false;
+      if (med.endDate && key > med.endDate) return false;
+      return true;
+    }
     function medName(id) {
       for (const group of MED_SCHEDULE) for (const med of group.meds) if (medId(med) === id) return medLabel(med);
       return id;
@@ -1323,6 +1335,8 @@
       return new Date(todayKey() + "T23:59:59") >= due;
     }
     function medDueToday(id) {
+      const med = medById(id);
+      if (med && !medActiveOnDate(med)) return false;
       if (id === "nurtec75") return isNurtecDueToday();
       return true;
     }
@@ -1796,6 +1810,7 @@
           <div class="mini">${currentLang === "en" ? "Next appointment" : "นัดครั้งถัดไป"}: ${esc(MED_VISIT_SNAPSHOT.nextVisit)}</div>
           <div class="mini">${currentLang === "en" ? "New" : "ยาใหม่"}: ${MED_HISTORY_NOTE.new.map(esc).join(", ")}</div>
           <div class="mini">${currentLang === "en" ? "Modified" : "ปรับยา"}: ${MED_HISTORY_NOTE.modified.map(esc).join(", ")}</div>
+          <div class="mini"><strong>Propranolol transition:</strong> 10 mg ใช้ถึงเช้า 23/06/2026 · เริ่ม 40 mg เย็น 23/06/2026</div>
         </div>
         <div class="band warn">
           <div class="row between"><strong>${currentLang === "en" ? "Review required" : "ต้องยืนยันกับแพทย์"}</strong><span>UNKNOWN</span></div>
@@ -1814,7 +1829,10 @@
           <div class="mini">DISCONTINUED: ${MED_HISTORY_NOTE.discontinued.map(esc).join(", ")}</div>
         </div>`;
       const orderedSchedule = [...MED_SCHEDULE].sort((a, b) => (a.group === currentGroup ? -1 : b.group === currentGroup ? 1 : 0));
-      document.getElementById("medButtons").innerHTML = orderedSchedule.map(group => `
+      const visibleSchedule = orderedSchedule
+        .map(group => ({ ...group, meds: group.meds.filter(med => medDueToday(medId(med))) }))
+        .filter(group => group.meds.length);
+      document.getElementById("medButtons").innerHTML = visibleSchedule.map(group => `
         <div class="medgroup ${group.group === currentGroup ? "current" : ""}">
           <div class="medtitle">${group.group === currentGroup ? (currentLang === "en" ? "Now · " : "ตอนนี้ · ") : ""}${esc(groupLabel(group.group))} <span class="mini">${group.due}</span></div>
           <div class="medgrid">${group.meds.map(med => {
