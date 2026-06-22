@@ -358,6 +358,13 @@
     .medcellmain strong { display: block; line-height: 1.2; overflow-wrap: anywhere; }
     .medcellmain span, .medtablerow small { display: block; color: var(--muted); font-size: 11px; line-height: 1.3; margin-top: 3px; }
     .medstatuspill { justify-self: end; border: 1px solid var(--line); background: var(--panel2); color: var(--text); border-radius: 999px; padding: 5px 7px; font-size: 11px; font-weight: 950; text-align: center; }
+    details.compactdetails { border: 1px solid var(--line); background: var(--panel); border-radius: var(--r); margin-bottom: 10px; overflow: hidden; }
+    details.compactdetails summary { min-height: 54px; padding: 13px 14px; cursor: pointer; font-weight: 950; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    details.compactdetails summary::-webkit-details-marker { display: none; }
+    details.compactdetails summary::after { content: "+"; color: var(--muted); font-size: 18px; }
+    details.compactdetails[open] summary::after { content: "-"; }
+    .compactbody { padding: 0 14px 14px; }
+    .compactbody .band { margin-bottom: 8px; }
     @media (min-width: 760px) {
       .metricgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     }
@@ -1874,35 +1881,38 @@
           <div class="row between"><strong>${currentLang === "en" ? "Taken today" : "วันนี้กินแล้ว"} ${takenCount}/${total}</strong><span>${Math.round(takenCount / total * 100)} %</span></div>
           ${missed.length ? `<div class="mini" style="margin-top:8px">${currentLang === "en" ? "Missed" : "ยังไม่ได้กิน"} ${missed.length} ${currentLang === "en" ? "item(s)" : "รายการ"}</div>` : `<div class="mini" style="margin-top:8px">${currentLang === "en" ? "Nothing overdue" : "ไม่มีรายการเลยเวลา"}</div>`}
         </div>
-        <div class="band">
-          <div class="row between"><strong>${currentLang === "en" ? "Visit snapshot" : "สรุปหลังพบแพทย์"}</strong><span>${esc(MED_VISIT_SNAPSHOT.date)}</span></div>
-          <div class="mini">${currentLang === "en" ? "Doctor" : "แพทย์"}: ${esc(MED_VISIT_SNAPSHOT.doctor)} · ${esc(MED_VISIT_SNAPSHOT.clinic)}</div>
-          <div class="mini">${currentLang === "en" ? "Next appointment" : "นัดครั้งถัดไป"}: ${esc(MED_VISIT_SNAPSHOT.nextVisit)}</div>
-          <div class="mini">${currentLang === "en" ? "New" : "ยาใหม่"}: ${MED_HISTORY_NOTE.new.map(esc).join(", ")}</div>
-          <div class="mini">${currentLang === "en" ? "Modified" : "ปรับยา"}: ${MED_HISTORY_NOTE.modified.map(esc).join(", ")}</div>
-          <div class="mini"><strong>${currentLang === "en" ? "Transition" : "ช่วงเปลี่ยนยา"}:</strong> 22/06/2026 ใช้ตารางเก่าทั้งหมด · เริ่มตารางใหม่ 23/06/2026</div>
-        </div>
+        ${dailyMedicationTableHtml(visibleSchedule)}
         ${MED_REVIEW_REQUIRED.length ? `<div class="band warn">
           <div class="row between"><strong>${currentLang === "en" ? "Review required" : "ต้องยืนยันกับแพทย์"}</strong><span>UNKNOWN</span></div>
           ${MED_REVIEW_REQUIRED.map(m => `<div class="mini"><strong>${esc(m.name)}</strong>: ${esc(m.note)}</div>`).join("")}
-        </div>` : `<div class="band ok">
-          <div class="row between"><strong>${currentLang === "en" ? "Continued meds confirmed" : "ยาที่กินต่อ"}</strong><span>CONTINUE</span></div>
-          <div class="mini">Pregabalin 75 mg และ Flunarizine 5 mg ยังอยู่ในตารางยา เพราะหมอไม่ได้สั่งยกเลิก</div>
-        </div>`}
-        <div class="band">
-          <div class="row between"><strong>Nurtec</strong><span>DISCONTINUED</span></div>
-          <div class="mini">${currentLang === "en" ? "Last logged" : "บันทึกล่าสุด"}: ${nurtecLast ? `${dateText(nurtecLast.at)} ${timeText(nurtecLast.at)}` : "-"}</div>
-          <div class="mini">${currentLang === "en" ? "Final dose" : "dose สุดท้าย"}: 23/06/2026 · ${currentLang === "en" ? "then stop, not in daily schedule" : "แล้วหยุด ไม่อยู่ในตารางประจำ"}</div>
-        </div>
-        <div class="band">
-          <div class="row between"><strong>${currentLang === "en" ? "Medication history" : "ประวัติการเปลี่ยนยา"}</strong><span>22/06/2026</span></div>
-          <div class="mini">NEW: ${MED_HISTORY_NOTE.new.map(esc).join(", ")}</div>
-          <div class="mini">MODIFIED: ${MED_HISTORY_NOTE.modified.map(esc).join(", ")}</div>
-          <div class="mini">CONTINUE: ${MED_HISTORY_NOTE.continue.map(esc).join(", ")}</div>
-          <div class="mini">DISCONTINUED: ${MED_HISTORY_NOTE.discontinued.map(esc).join(", ")}</div>
-        </div>
-        ${dailyMedicationTableHtml(visibleSchedule)}`;
-      document.getElementById("medButtons").innerHTML = visibleSchedule.map(group => `
+        </div>` : ""}
+        <details class="compactdetails">
+          <summary><span>${currentLang === "en" ? "Visit + medication history" : "ประวัติพบแพทย์ + เปลี่ยนยา"}</span><span class="mini">22/06/2026</span></summary>
+          <div class="compactbody">
+            <div class="band">
+              <div class="row between"><strong>${currentLang === "en" ? "Visit snapshot" : "สรุปหลังพบแพทย์"}</strong><span>${esc(MED_VISIT_SNAPSHOT.date)}</span></div>
+              <div class="mini">${currentLang === "en" ? "Doctor" : "แพทย์"}: ${esc(MED_VISIT_SNAPSHOT.doctor)} · ${esc(MED_VISIT_SNAPSHOT.clinic)}</div>
+              <div class="mini">${currentLang === "en" ? "Next appointment" : "นัดครั้งถัดไป"}: ${esc(MED_VISIT_SNAPSHOT.nextVisit)}</div>
+              <div class="mini"><strong>${currentLang === "en" ? "Transition" : "ช่วงเปลี่ยนยา"}:</strong> 22/06/2026 ใช้ตารางเก่าทั้งหมด · เริ่มตารางใหม่ 23/06/2026</div>
+            </div>
+            <div class="band ok">
+              <div class="row between"><strong>${currentLang === "en" ? "Continued meds" : "ยาที่กินต่อ"}</strong><span>CONTINUE</span></div>
+              <div class="mini">${MED_HISTORY_NOTE.continue.map(esc).join(", ")}</div>
+            </div>
+            <div class="band">
+              <div class="row between"><strong>Nurtec</strong><span>DISCONTINUED</span></div>
+              <div class="mini">${currentLang === "en" ? "Last logged" : "บันทึกล่าสุด"}: ${nurtecLast ? `${dateText(nurtecLast.at)} ${timeText(nurtecLast.at)}` : "-"}</div>
+              <div class="mini">${currentLang === "en" ? "Final dose" : "dose สุดท้าย"}: 23/06/2026 · ${currentLang === "en" ? "then stop, not in daily schedule" : "แล้วหยุด ไม่อยู่ในตารางประจำ"}</div>
+            </div>
+            <div class="band">
+              <div class="row between"><strong>${currentLang === "en" ? "Medication history" : "ประวัติการเปลี่ยนยา"}</strong><span>22/06/2026</span></div>
+              <div class="mini">NEW: ${MED_HISTORY_NOTE.new.map(esc).join(", ")}</div>
+              <div class="mini">MODIFIED: ${MED_HISTORY_NOTE.modified.map(esc).join(", ")}</div>
+              <div class="mini">DISCONTINUED: ${MED_HISTORY_NOTE.discontinued.map(esc).join(", ")}</div>
+            </div>
+          </div>
+        </details>`;
+      const medGroupHtml = group => `
         <div class="medgroup ${group.group === currentGroup ? "current" : ""}">
           <div class="medtitle">${group.group === currentGroup ? (currentLang === "en" ? "Now · " : "ตอนนี้ · ") : ""}${esc(groupLabel(group.group))} <span class="mini">${group.due}</span></div>
           <div class="medgrid">${group.meds.map(med => {
@@ -1924,7 +1934,17 @@
               ${special ? `<span>${esc(special)}</span>` : ""}
             </button>`;
           }).join("")}</div>
-        </div>`).join("");
+        </div>`;
+      let currentMedGroups = visibleSchedule.filter(group => group.group === currentGroup);
+      if (!currentMedGroups.length && visibleSchedule.length) currentMedGroups = [visibleSchedule[0]];
+      const openGroups = new Set(currentMedGroups.map(group => group.group));
+      const otherMedGroups = visibleSchedule.filter(group => !openGroups.has(group.group));
+      document.getElementById("medButtons").innerHTML = `
+        ${currentMedGroups.map(medGroupHtml).join("")}
+        ${otherMedGroups.length ? `<details class="compactdetails">
+          <summary><span>${currentLang === "en" ? "Other times today" : "ช่วงเวลาอื่นวันนี้"}</span><span class="mini">${otherMedGroups.length} ${currentLang === "en" ? "group(s)" : "ช่วง"}</span></summary>
+          <div class="compactbody">${otherMedGroups.map(medGroupHtml).join("")}</div>
+        </details>` : ""}`;
       document.querySelectorAll("[data-med]").forEach(btn => {
         btn.onclick = () => {
           const id = btn.dataset.med;
@@ -2536,7 +2556,10 @@
           <div class="sleepmetric"><b>${shortDays}</b><span>${currentLang === "en" ? "short-sleep days" : "วันที่นอนน้อยกว่า 6 ชม."}</span></div>
           <div class="sleepmetric"><b>${wakeHeadaches}</b><span>${currentLang === "en" ? "wake-up headaches" : "ตื่นมาปวดหัว"}</span></div>
         </div>
-        <div class="sleepdays">${dayRows}</div>
+        <details class="compactdetails">
+          <summary><span>${currentLang === "en" ? "Recent sleep days" : "ดูรายวันล่าสุด"}</span><span class="mini">${recent.length} logs</span></summary>
+          <div class="compactbody"><div class="sleepdays">${dayRows}</div></div>
+        </details>
       </div>`;
     }
     function sleepEntriesSorted() {
