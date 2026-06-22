@@ -351,13 +351,25 @@
     .sleepfill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--blue), var(--green)); }
     .sleepday.warn .sleepfill { background: linear-gradient(90deg, var(--yellow), var(--red)); }
     .sleepday strong { color: var(--text); white-space: nowrap; }
-    .medtable { display: grid; gap: 7px; margin-bottom: 12px; }
-    .medtablerow { display: grid; grid-template-columns: 62px minmax(0, 1fr) 82px; gap: 8px; align-items: start; border: 1px solid var(--line); background: rgba(255,255,255,.035); border-radius: 12px; padding: 9px; }
-    .medtablerow.head { background: transparent; color: var(--muted); font-size: 11px; font-weight: 950; text-transform: uppercase; border-style: dashed; }
-    .medcellmain { min-width: 0; }
-    .medcellmain strong { display: block; line-height: 1.2; overflow-wrap: anywhere; }
-    .medcellmain span, .medtablerow small { display: block; color: var(--muted); font-size: 11px; line-height: 1.3; margin-top: 3px; }
-    .medstatuspill { justify-self: end; border: 1px solid var(--line); background: var(--panel2); color: var(--text); border-radius: 999px; padding: 5px 7px; font-size: 11px; font-weight: 950; text-align: center; }
+    .medtable { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+    .medslot { border: 1px solid var(--line); background: rgba(255,255,255,.035); border-radius: 12px; overflow: hidden; min-height: 116px; }
+    .medslothead { background: var(--panel2); padding: 8px 9px; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+    .medslothead strong { font-size: 14px; }
+    .medslothead span { color: var(--muted); font-size: 11px; font-weight: 900; }
+    .medslotbody { display: grid; gap: 6px; padding: 8px; }
+    .medline { border: 1px solid rgba(255,255,255,.075); background: rgba(255,255,255,.035); border-radius: 10px; padding: 7px; }
+    .medline strong { display: block; font-size: 13px; line-height: 1.2; overflow-wrap: anywhere; }
+    .medline span { display: block; color: var(--muted); font-size: 10.5px; line-height: 1.25; margin-top: 3px; }
+    .medtag { display: inline-block; border-radius: 999px; background: rgba(119,187,255,.12); color: var(--blue); padding: 2px 6px; font-size: 10px; font-weight: 950; margin-top: 5px; }
+    .reportmatrix { display: grid; gap: 6px; }
+    .reportmatrixrow { display: grid; grid-template-columns: 86px 74px minmax(0, 1fr) 78px; gap: 7px; align-items: center; padding: 8px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.035); }
+    .reportmatrixrow.head { color: var(--muted); font-size: 11px; font-weight: 950; text-transform: uppercase; background: transparent; border-style: dashed; }
+    .reportmatrixrow strong { overflow-wrap: anywhere; }
+    .reportmatrixrow span { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+    .reportmatrixrow.warn { border-color: rgba(247,200,79,.35); background: rgba(247,200,79,.07); }
+    @media (min-width: 760px) {
+      .medtable { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    }
     details.compactdetails { border: 1px solid var(--line); background: var(--panel); border-radius: var(--r); margin-bottom: 10px; overflow: hidden; }
     details.compactdetails summary { min-height: 54px; padding: 13px 14px; cursor: pointer; font-weight: 950; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
     details.compactdetails summary::-webkit-details-marker { display: none; }
@@ -1829,30 +1841,26 @@
       return currentLang === "en" ? "ongoing" : "ต่อเนื่อง";
     }
     function dailyMedicationTableHtml(schedule) {
-      const rows = schedule.flatMap(group => group.meds.map(med => {
-        const id = medId(med);
-        return `<div class="medtablerow">
-          <div><strong>${esc(group.due)}</strong><small>${esc(groupLabel(group.group))}</small></div>
-          <div class="medcellmain"><strong>${esc(medLabel(med))}</strong><span>${esc(medDose(med) || "-")} · ${currentLang === "en" ? "Start" : "เริ่ม/ช่วง"}: ${esc(medStartText(med))} · ${currentLang === "en" ? "Doctor" : "แพทย์"}: ${esc(medDoctor(id))}</span></div>
-          <div class="medstatuspill">${esc(medPlanStatus(med))}</div>
-        </div>`;
-      })).join("");
       return `<div class="band"><div class="row between"><strong>${currentLang === "en" ? "Daily medication table" : "ตารางยารายวัน"}</strong><span class="mini">${todayKey()}</span></div>
-        <div class="medtable" style="margin-top:10px">
-          <div class="medtablerow head"><div>${currentLang === "en" ? "Time" : "เวลา"}</div><div>${currentLang === "en" ? "Medication" : "ยา"}</div><div>${currentLang === "en" ? "Status" : "สถานะ"}</div></div>
-          ${rows || `<div class="empty">${esc(t("noData"))}</div>`}
+        <div class="medtable">
+          ${schedule.map(group => `<div class="medslot">
+            <div class="medslothead"><strong>${esc(group.due)}</strong><span>${esc(groupLabel(group.group))}</span></div>
+            <div class="medslotbody">${group.meds.map(med => {
+              const id = medId(med);
+              return `<div class="medline"><strong>${esc(medLabel(med))}</strong><span>${esc(medDose(med) || "-")} · ${esc(medDoctor(id))}</span><span class="medtag">${esc(medPlanStatus(med))}</span></div>`;
+            }).join("")}</div>
+          </div>`).join("") || `<div class="empty">${esc(t("noData"))}</div>`}
         </div>
       </div>`;
     }
     function reportMedicationRows(schedule) {
-      return schedule.flatMap(group => group.meds.map(med => {
-        const id = medId(med);
-        return `<div class="reportrow">
-          <strong>${esc(group.due)} · ${esc(groupLabel(group.group))}</strong>
-          <div class="reportcell">${esc(medLabel(med))}<br>${esc(medDose(med) || "-")}<br>Start/status: ${esc(medStartText(med))}</div>
-          <div class="reportbadge">${esc(medDoctor(id))}</div>
-        </div>`;
-      })).join("");
+      return `<div class="medtable">${schedule.map(group => `<div class="medslot">
+        <div class="medslothead"><strong>${esc(group.due)}</strong><span>${esc(groupLabel(group.group))}</span></div>
+        <div class="medslotbody">${group.meds.map(med => {
+          const id = medId(med);
+          return `<div class="medline"><strong>${esc(medLabel(med))}</strong><span>${esc(medDose(med) || "-")} · ${currentLang === "en" ? "Doctor" : "แพทย์"}: ${esc(medDoctor(id))}</span><span class="medtag">${esc(medPlanStatus(med))}</span></div>`;
+        }).join("")}</div>
+      </div>`).join("")}</div>`;
     }
     function currentMedGroupName() {
       const h = new Date().getHours();
@@ -2588,9 +2596,20 @@
         const sleepText = Number.isFinite(m) ? fmtMins(m) : "-";
         const windowText = [s.bedtime, s.wakeTime].filter(Boolean).join("→") || "-";
         const wake = s.wakeHeadache ? choiceLabel(s.wakeHeadache, s.wakeHeadache) : "-";
-        return `<div class="reportrow"><strong>${esc(s.key)}</strong><div class="reportcell">${esc(windowText)} · ${esc(sleepQualityText(m))} · wake headache: ${esc(wake)}</div><div class="reportbadge">${esc(sleepText)}</div></div>`;
+        const warn = Number.isFinite(m) && m < 360;
+        return `<div class="reportmatrixrow ${warn ? "warn" : ""}"><strong>${esc(s.key)}</strong><strong>${esc(sleepText)}</strong><span>${esc(windowText)}</span><span>${esc(wake)}</span></div>`;
       }).join("");
-      return rows || `<div class="empty">No sleep logs yet</div>`;
+      return rows ? `<div class="reportmatrix"><div class="reportmatrixrow head"><div>Date</div><div>Sleep</div><div>Window</div><div>Morning</div></div>${rows}</div>` : `<div class="empty">No sleep logs yet</div>`;
+    }
+    function sleepDoctorInterpretation(data) {
+      const parts = [];
+      if (!data.entries.length) return "No sleep data logged yet.";
+      if (data.avg != null) parts.push(`Average sleep ${data.avgText} across ${data.withDuration.length} log(s) with duration.`);
+      if (data.shortDays) parts.push(`${data.shortDays} short-sleep day(s) under 6 hours.`);
+      if (data.veryShortDays) parts.push(`${data.veryShortDays} very-short-sleep day(s) under 5 hours.`);
+      if (data.wakeHeadaches) parts.push(`${data.wakeHeadaches}/${data.entries.length} morning(s) included wake-up headache.`);
+      if (!parts.length) parts.push("Sleep duration pattern is not yet interpretable.");
+      return parts.join(" ");
     }
 
     function renderReport() {
@@ -2727,15 +2746,19 @@
 
         <div class="reportsection">
           <h2>Daily Medication Table</h2>
-          <div class="reporttable">${reportMedicationRows(reportMedSchedule)}</div>
+          ${reportMedicationRows(reportMedSchedule)}
         </div>
 
         <div class="reportsection">
-          <h2>Sleep / Morning Headache</h2>
+          <h2>Clinical Sleep Summary</h2>
+          <div class="reporthero">
+            <div class="reporttitle">${esc(avgSleep)}</div>
+            <div class="reportmeta">Average sleep · ${sleepData.withDuration.length}/${sleepData.entries.length} log(s) with duration</div>
+            <div class="clinicalnote">${esc(sleepDoctorInterpretation(sleepData))}</div>
+          </div>
           <div class="reportlist">
-            <div class="reportitem">Average sleep duration: <strong>${esc(avgSleep)}</strong> from ${sleepData.withDuration.length}/${sleepData.entries.length} logs with duration.</div>
-            <div class="reportitem">Short sleep (&lt;6h): <strong>${sleepData.shortDays}</strong>; very short sleep (&lt;5h): <strong>${sleepData.veryShortDays}</strong>.</div>
-            <div class="reportitem">Wake-up headache: <strong>${wakeHeadache}/${sleepData.entries.length || 0}</strong> mornings logged</div>
+            <div class="reportitem"><strong>Short sleep:</strong> ${sleepData.shortDays} day(s) &lt;6h · ${sleepData.veryShortDays} day(s) &lt;5h</div>
+            <div class="reportitem"><strong>Wake-up headache:</strong> ${wakeHeadache}/${sleepData.entries.length || 0} morning logs</div>
             ${latestSleepHealth ? `<div class="reportitem">Latest imported HRV / resting HR: <strong>${esc(latestSleepHealth.hrv ?? "-")} ms / ${esc(latestSleepHealth.restingHR ?? "-")} BPM</strong></div>` : ""}
           </div>
           <div class="reporttable" style="margin-top:8px">${sleepReportRows(sleepData.entries, 10)}</div>
@@ -2820,6 +2843,9 @@
         `Average completed attack duration: ${avgDur}`,
         `Visual aura/visual disturbance: ${visual}/${attacks.length || 0}`,
         `Nausea: ${nausea}/${attacks.length || 0}`,
+        "",
+        "Clinical sleep summary:",
+        sleepDoctorInterpretation(sleepData),
         `Average sleep: ${sleepData.avgText} (${sleepData.withDuration.length}/${sleepData.entries.length} logs with duration)`,
         `Short sleep <6h: ${sleepData.shortDays}; very short sleep <5h: ${sleepData.veryShortDays}`,
         `Wake-up headache mornings: ${wakeHeadache}/${sleepData.entries.length || 0}`,
