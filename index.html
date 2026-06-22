@@ -979,27 +979,58 @@
     };
 
     const MED_SCHEDULE = [
+      { group: "เช้า (ก่อนอาหารเช้า)", due: "08:00", meds: [
+        { id: "nuvigil150_morning", name: "Nuvigil (Armodafinil) 150 mg x 1 เม็ด", dose: "NEW · อ.โบว์ · ก่อนอาหารเช้า" }
+      ]},
       { group: "เช้า (หลังอาหารเช้า)", due: "09:00", meds: [
         { id: "methylphenidate10x2_morning", name: "Methylphenidate 10 mg x 2 เม็ด", dose: "รวม 20 mg" },
         { id: "fluoxetine20x2_morning", name: "Fluoxetine 20 mg x 2 เม็ด", dose: "รวม 40 mg" },
-        { id: "propranolol10_morning", name: "Propranolol 10 mg x 1 เม็ด", dose: "" },
-        { id: "naproxen250_morning", name: "Naproxen 250 mg x 1 เม็ด", dose: "ช่วง 3 วันแรก: เช้า 1 เม็ด" },
-        { id: "nurtec75", name: "Nurtec (Rimegepant) 75 mg x 1 เม็ด", dose: "วันเว้นวัน", everyOtherDay: true }
+        { id: "propranolol40_morning", name: "Propranolol 40 mg x 1 เม็ด", dose: "MODIFIED · อ.โบว์ · เดิม 10 mg" }
       ]},
       { group: "กลางวัน (หลังอาหารกลางวัน)", due: "13:00", meds: [
         { id: "methylphenidate10x2_midday", name: "Methylphenidate 10 mg x 2 เม็ด", dose: "รวม 20 mg" }
       ]},
       { group: "เย็น (หลังอาหารเย็น)", due: "18:00", meds: [
         { id: "methylphenidate10x2_evening", name: "Methylphenidate 10 mg x 2 เม็ด", dose: "รวม 20 mg" },
-        { id: "propranolol10_evening", name: "Propranolol 10 mg x 1 เม็ด", dose: "" },
-        { id: "naproxen250_evening", name: "Naproxen 250 mg x 1 เม็ด", dose: "ช่วง 3 วันแรก: เย็น 1 เม็ด" }
+        { id: "propranolol40_evening", name: "Propranolol 40 mg x 1 เม็ด", dose: "MODIFIED · อ.โบว์ · เดิม 10 mg" }
+      ]},
+      { group: "20:00", due: "20:00", meds: [
+        { id: "circadin2_half_2000", name: "Circadin (Melatonin) 2 mg x 1/2 เม็ด", dose: "NEW · อ.โบว์" }
       ]},
       { group: "ก่อนนอน", due: "22:00", meds: [
-        { id: "pregabalin75_bedtime", name: "Pregabalin 75 mg x 1 เม็ด", dose: "" },
-        { id: "amitriptyline25_bedtime", name: "Amitriptyline 25 mg x 1 เม็ด", dose: "" },
-        { id: "flunarizine5_bedtime", name: "Flunarizine 5 mg x 1 เม็ด", dose: "" }
+        { id: "amitriptyline50_bedtime", name: "Amitriptyline 50 mg ก่อนนอน", dose: "MODIFIED · อ.โบว์ · เดิม 25 mg" },
+        { id: "depakine_chrono500_half_bedtime", name: "Depakine Chrono 500 mg x 1/2 เม็ด", dose: "NEW · อ.โบว์" }
       ]}
     ];
+
+    const MED_VISIT_SNAPSHOT = {
+      date: "2026-06-22",
+      doctor: "อ.โบว์",
+      clinic: "Sleep Medicine",
+      nextVisit: "2026-07-13",
+      notes: [
+        "Visit updated medication plan on 22/06/2026.",
+        "Next appointment changed to 13/07/2026.",
+        "Medication supply issue before appointment was reported as resolved."
+      ]
+    };
+    const MED_REVIEW_REQUIRED = [
+      { name: "Pregabalin 75 mg", status: "UNKNOWN", note: "ไม่พบคำสั่งหยุดชัดเจน ต้องยืนยันกับแพทย์" },
+      { name: "Flunarizine 5 mg", status: "UNKNOWN", note: "ไม่พบคำสั่งหยุดชัดเจน ต้องยืนยันกับแพทย์" }
+    ];
+    const MED_DISCONTINUED = [
+      { name: "Nurtec (Rimegepant) 75 mg", status: "DISCONTINUED", stopDate: "2026-06-23", note: "dose สุดท้าย 23/06/2026 แล้วหยุด ไม่ต่อยา" }
+    ];
+    const MED_HISTORY_NOTE = {
+      date: "2026-06-22",
+      doctor: "อ.โบว์",
+      clinic: "Sleep Medicine",
+      new: ["Nuvigil (Armodafinil) 150 mg", "Circadin (Melatonin) 2 mg 1/2 เม็ด 20:00", "Depakine Chrono 500 mg 1/2 เม็ด ก่อนนอน"],
+      modified: ["Propranolol 10 mg BID → 40 mg BID", "Amitriptyline 25 mg → 50 mg ก่อนนอน"],
+      continue: ["Fluoxetine 40 mg · อ.คมสันต์", "Methylphenidate 20 mg · อ.คมสันต์"],
+      review: ["Pregabalin 75 mg", "Flunarizine 5 mg"],
+      discontinued: ["Nurtec · dose สุดท้าย 23/06/2026 แล้วหยุด"]
+    };
 
     const PRODROME = ["หาวบ่อย", "ง่วงผิดปกติ", "หงุดหงิด", "สมองช้า", "คิดไม่ออก", "ตาล้า", "คอแข็ง", "เวียนหัว", "จะอ้วก"];
     const SIDES = ["ซ้าย", "ขวา", "ทั้งสองข้าง"];
@@ -1089,9 +1120,11 @@
       "แสงแวบ": "Flashing lights",
       "ตาเบลอ": "Blurred/weird vision",
       "จะอ้วก/คลื่นไส้": "Nausea / urge to vomit",
+      "เช้า (ก่อนอาหารเช้า)": "Morning (before breakfast)",
       "เช้า (หลังอาหารเช้า)": "Morning (after breakfast)",
       "กลางวัน (หลังอาหารกลางวัน)": "Midday (after lunch)",
       "เย็น (หลังอาหารเย็น)": "Evening (after dinner)",
+      "20:00": "20:00",
       "ก่อนนอน": "Bedtime"
     };
 
@@ -1731,15 +1764,21 @@
     }
 
     function medPlanCount() { return MED_SCHEDULE.reduce((sum, g) => sum + g.meds.filter(m => medDueToday(medId(m))).length, 0); }
+    function plannedMedIds() {
+      return new Set(MED_SCHEDULE.flatMap(g => g.meds.map(medId)));
+    }
     function currentMedGroupName() {
       const h = new Date().getHours();
+      if (h < 9) return "เช้า (ก่อนอาหารเช้า)";
       if (h < 11) return "เช้า (หลังอาหารเช้า)";
       if (h < 16) return "กลางวัน (หลังอาหารกลางวัน)";
-      if (h < 21) return "เย็น (หลังอาหารเย็น)";
+      if (h < 20) return "เย็น (หลังอาหารเย็น)";
+      if (h < 22) return "20:00";
       return "ก่อนนอน";
     }
     function renderMeds() {
-      const takenCount = new Set(todayMedLogs().filter(l => medDueToday(l.medId)).map(l => l.medId)).size;
+      const planIds = plannedMedIds();
+      const takenCount = new Set(todayMedLogs().filter(l => planIds.has(l.medId) && medDueToday(l.medId)).map(l => l.medId)).size;
       const total = medPlanCount();
       const missed = [];
       for (const group of MED_SCHEDULE) for (const med of group.meds) if (medDueToday(medId(med)) && medStatus(medId(med), group) === "missed") missed.push(medLabel(med));
@@ -1752,23 +1791,28 @@
           ${missed.length ? `<div class="mini" style="margin-top:8px">${currentLang === "en" ? "Missed" : "ยังไม่ได้กิน"} ${missed.length} ${currentLang === "en" ? "item(s)" : "รายการ"}</div>` : `<div class="mini" style="margin-top:8px">${currentLang === "en" ? "Nothing overdue" : "ไม่มีรายการเลยเวลา"}</div>`}
         </div>
         <div class="band">
-          <div class="row between"><strong>Nurtec</strong><span>${currentLang === "en" ? "every other day" : "วันเว้นวัน"}</span></div>
-          <div class="mini">${currentLang === "en" ? "Last taken" : "ล่าสุด"}: ${nurtecLast ? `${dateText(nurtecLast.at)} ${timeText(nurtecLast.at)}` : "-"}</div>
-          <div class="mini">${currentLang === "en" ? "Next due" : "ครั้งถัดไป"}: ${nextNurtecDue()}</div>
+          <div class="row between"><strong>${currentLang === "en" ? "Visit snapshot" : "สรุปหลังพบแพทย์"}</strong><span>${esc(MED_VISIT_SNAPSHOT.date)}</span></div>
+          <div class="mini">${currentLang === "en" ? "Doctor" : "แพทย์"}: ${esc(MED_VISIT_SNAPSHOT.doctor)} · ${esc(MED_VISIT_SNAPSHOT.clinic)}</div>
+          <div class="mini">${currentLang === "en" ? "Next appointment" : "นัดครั้งถัดไป"}: ${esc(MED_VISIT_SNAPSHOT.nextVisit)}</div>
+          <div class="mini">${currentLang === "en" ? "New" : "ยาใหม่"}: ${MED_HISTORY_NOTE.new.map(esc).join(", ")}</div>
+          <div class="mini">${currentLang === "en" ? "Modified" : "ปรับยา"}: ${MED_HISTORY_NOTE.modified.map(esc).join(", ")}</div>
+        </div>
+        <div class="band warn">
+          <div class="row between"><strong>${currentLang === "en" ? "Review required" : "ต้องยืนยันกับแพทย์"}</strong><span>UNKNOWN</span></div>
+          ${MED_REVIEW_REQUIRED.map(m => `<div class="mini"><strong>${esc(m.name)}</strong>: ${esc(m.note)}</div>`).join("")}
         </div>
         <div class="band">
-          <div class="row between"><strong>Naproxen</strong><span>${esc(naproxenPhase())}</span></div>
-          <label class="mini" for="naproxenStart">${currentLang === "en" ? "Edit medication start date" : "แก้วันเริ่มยาได้"}</label>
-          <input id="naproxenStart" type="date" value="${esc(naproxenStartDate)}">
+          <div class="row between"><strong>Nurtec</strong><span>DISCONTINUED</span></div>
+          <div class="mini">${currentLang === "en" ? "Last logged" : "บันทึกล่าสุด"}: ${nurtecLast ? `${dateText(nurtecLast.at)} ${timeText(nurtecLast.at)}` : "-"}</div>
+          <div class="mini">${currentLang === "en" ? "Final dose" : "dose สุดท้าย"}: 23/06/2026 · ${currentLang === "en" ? "then stop, not in daily schedule" : "แล้วหยุด ไม่อยู่ในตารางประจำ"}</div>
+        </div>
+        <div class="band">
+          <div class="row between"><strong>${currentLang === "en" ? "Medication history" : "ประวัติการเปลี่ยนยา"}</strong><span>22/06/2026</span></div>
+          <div class="mini">NEW: ${MED_HISTORY_NOTE.new.map(esc).join(", ")}</div>
+          <div class="mini">MODIFIED: ${MED_HISTORY_NOTE.modified.map(esc).join(", ")}</div>
+          <div class="mini">CONTINUE: ${MED_HISTORY_NOTE.continue.map(esc).join(", ")}</div>
+          <div class="mini">DISCONTINUED: ${MED_HISTORY_NOTE.discontinued.map(esc).join(", ")}</div>
         </div>`;
-      setTimeout(() => {
-        const input = document.getElementById("naproxenStart");
-        if (input) input.onchange = () => {
-          naproxenStartDate = input.value;
-          localStorage.setItem(NAPROXEN_START_KEY, naproxenStartDate);
-          render();
-        };
-      }, 0);
       const orderedSchedule = [...MED_SCHEDULE].sort((a, b) => (a.group === currentGroup ? -1 : b.group === currentGroup ? 1 : 0));
       document.getElementById("medButtons").innerHTML = orderedSchedule.map(group => `
         <div class="medgroup ${group.group === currentGroup ? "current" : ""}">
@@ -2476,8 +2520,12 @@
         <div class="reportsection">
           <h2>Medication Summary</h2>
           <div class="reportlist">
-            <div class="reportitem"><strong>Nurtec:</strong> ${nurtec} dose(s). Last taken: ${nurtecLast ? `${esc(dateText(nurtecLast.at))} ${esc(timeText(nurtecLast.at))}` : "-"}. Next due: ${esc(nextNurtecDue())}</div>
-            <div class="reportitem"><strong>Naproxen schedule note:</strong> ${esc(naproxenPhase())}</div>
+            <div class="reportitem"><strong>Visit:</strong> 22/06/2026 · ${esc(MED_VISIT_SNAPSHOT.doctor)} · ${esc(MED_VISIT_SNAPSHOT.clinic)}. Next appointment: ${esc(MED_VISIT_SNAPSHOT.nextVisit)}.</div>
+            <div class="reportitem"><strong>New medications:</strong> ${MED_HISTORY_NOTE.new.map(esc).join("; ")}</div>
+            <div class="reportitem"><strong>Modified medications:</strong> ${MED_HISTORY_NOTE.modified.map(esc).join("; ")}</div>
+            <div class="reportitem"><strong>Confirmed continue:</strong> ${MED_HISTORY_NOTE.continue.map(esc).join("; ")}</div>
+            <div class="reportitem"><strong>Review required:</strong> ${MED_REVIEW_REQUIRED.map(m => `${esc(m.name)} (${esc(m.status)})`).join("; ")}. Must confirm with physician.</div>
+            <div class="reportitem"><strong>Nurtec:</strong> DISCONTINUED after final dose 23/06/2026. Logged dose count: ${nurtec}. Last logged: ${nurtecLast ? `${esc(dateText(nurtecLast.at))} ${esc(timeText(nurtecLast.at))}` : "-"}.</div>
           </div>
           ${topMeds.length ? `<div class="reporttable" style="margin-top:8px">${topMeds.map(([name, count]) => `
             <div class="reportrow two"><strong>${esc(name)}</strong><div class="reportcell">${count} logged dose(s)</div></div>`).join("")}</div>` : ""}
@@ -2562,7 +2610,15 @@
         `Visual aura/visual disturbance: ${visual}/${attacks.length || 0}`,
         `Nausea: ${nausea}/${attacks.length || 0}`,
         `Wake-up headache mornings: ${wakeHeadache}/${sleepLogs.length || 0}`,
-        `Nurtec doses logged: ${nurtec}`,
+        "",
+        "Medication visit snapshot:",
+        `- Visit: 22/06/2026, ${MED_VISIT_SNAPSHOT.doctor}, ${MED_VISIT_SNAPSHOT.clinic}`,
+        `- Next appointment: ${MED_VISIT_SNAPSHOT.nextVisit}`,
+        `- New: ${MED_HISTORY_NOTE.new.join("; ")}`,
+        `- Modified: ${MED_HISTORY_NOTE.modified.join("; ")}`,
+        `- Confirmed continue: ${MED_HISTORY_NOTE.continue.join("; ")}`,
+        `- Review required: ${MED_REVIEW_REQUIRED.map(m => m.name).join("; ")}. Must confirm with physician.`,
+        `- Nurtec: DISCONTINUED after final dose 23/06/2026. Logged doses: ${nurtec}.`,
         "",
         "Top reported triggers:",
         topTriggers.length ? topTriggers.map(([name, count]) => `- ${name} / ${CLINICAL[name] || "possible migraine trigger"}: ${count}`).join("\n") : "- Not enough trigger data",
