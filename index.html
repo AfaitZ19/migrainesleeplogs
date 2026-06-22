@@ -340,6 +340,17 @@
     .reportlist { display: grid; gap: 7px; }
     .reportitem { padding: 9px; border-radius: 12px; background: rgba(255,255,255,.035); border: 1px solid var(--line); }
     .clinicalnote { color: var(--muted); font-size: 12px; margin-top: 7px; }
+    .sleepinsight { display: grid; gap: 10px; margin-bottom: 10px; }
+    .sleepmetrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .sleepmetric { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 10px; min-height: 78px; }
+    .sleepmetric b { display: block; font-size: 24px; line-height: 1.05; margin-bottom: 5px; }
+    .sleepmetric span { display: block; color: var(--muted); font-size: 12px; line-height: 1.25; }
+    .sleepdays { display: grid; gap: 6px; }
+    .sleepday { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; gap: 8px; align-items: center; color: var(--muted); font-size: 12px; }
+    .sleepbar { height: 12px; border-radius: 999px; background: rgba(255,255,255,.07); overflow: hidden; }
+    .sleepfill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--blue), var(--green)); }
+    .sleepday.warn .sleepfill { background: linear-gradient(90deg, var(--yellow), var(--red)); }
+    .sleepday strong { color: var(--text); white-space: nowrap; }
     @media (min-width: 760px) {
       .metricgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     }
@@ -486,6 +497,7 @@
         </div>
 
         <div id="reminders"></div>
+        <div id="sleepInsight"></div>
 
         <div class="activeattack" id="activeAttackBanner">
           <strong id="activeAttackText">🔴 กำลังปวดอยู่</strong>
@@ -2425,6 +2437,59 @@
       if (mins < 0) mins += 1440;
       return mins;
     }
+    function sleepMinutes(log) {
+      const direct = Number(log?.totalSleepMin ?? log?.totalSleepMinutes);
+      if (Number.isFinite(direct)) return direct;
+      return sleepDuration(log?.bedtime, log?.wakeTime);
+    }
+    function sleepQualityText(mins) {
+      if (!Number.isFinite(Number(mins))) return currentLang === "en" ? "No sleep duration" : "ยังไม่มีชั่วโมงนอน";
+      if (mins < 300) return currentLang === "en" ? "Very short sleep" : "นอนน้อยมาก";
+      if (mins < 360) return currentLang === "en" ? "Short sleep" : "นอนน้อย";
+      if (mins < 420) return currentLang === "en" ? "A bit short" : "นอนค่อนข้างน้อย";
+      if (mins <= 540) return currentLang === "en" ? "Good range" : "อยู่ในช่วงดี";
+      return currentLang === "en" ? "Long sleep" : "นอนยาว";
+    }
+    function renderSleepInsight() {
+      const box = document.getElementById("sleepInsight");
+      if (!box) return;
+      const sortedSleep = [...sleepLogs]
+        .map(s => ({ ...s, minutes: sleepMinutes(s) }))
+        .filter(s => s.date || s.at)
+        .sort((a, b) => new Date((b.date || dateKey(b.at)) + "T00:00:00") - new Date((a.date || dateKey(a.at)) + "T00:00:00"));
+      if (!sortedSleep.length) {
+        box.innerHTML = `<div class="band sleepinsight"><div class="row between"><strong>${currentLang === "en" ? "Sleep reading" : "อ่านการนอน"}</strong><span class="mini">${currentLang === "en" ? "No data" : "ยังไม่มีข้อมูล"}</span></div><div class="mini">${currentLang === "en" ? "Log morning sleep or import from Shortcut to see daily sleep interpretation here." : "บันทึกตอนเช้าหรือ Import จาก Shortcut แล้วแอปจะอ่านชั่วโมงนอนให้ตรงนี้"}</div></div>`;
+        return;
+      }
+      const latest = sortedSleep[0];
+      const recent = sortedSleep.slice(0, 7);
+      const mins = recent.map(s => Number(s.minutes)).filter(Number.isFinite);
+      const avg = mins.length ? Math.round(mins.reduce((sum, v) => sum + v, 0) / mins.length) : null;
+      const shortDays = recent.filter(s => Number(s.minutes) < 360).length;
+      const wakeHeadaches = recent.filter(s => s.wakeHeadache && s.wakeHeadache !== "ไม่ปวด").length;
+      const dayRows = recent.map(s => {
+        const m = Number(s.minutes);
+        const width = Number.isFinite(m) ? Math.max(5, Math.min(100, Math.round((m / 540) * 100))) : 5;
+        const warn = Number.isFinite(m) && m < 360;
+        const label = s.date ? dateText(s.date + "T00:00:00") : dateText(s.at);
+        const wake = s.wakeHeadache && s.wakeHeadache !== "ไม่ปวด" ? ` · ${choiceLabel(s.wakeHeadache, s.wakeHeadache)}` : "";
+        return `<div class="sleepday ${warn ? "warn" : ""}">
+          <strong>${esc(label)}</strong>
+          <div class="sleepbar"><div class="sleepfill" style="width:${width}%"></div></div>
+          <span>${Number.isFinite(m) ? esc(fmtMins(m)) : "-"}${esc(wake)}</span>
+        </div>`;
+      }).join("");
+      box.innerHTML = `<div class="band sleepinsight">
+        <div class="row between"><strong>${currentLang === "en" ? "Sleep reading" : "อ่านการนอน"}</strong><span class="mini">${currentLang === "en" ? "Last 7 logs" : "7 logs ล่าสุด"}</span></div>
+        <div class="sleepmetrics">
+          <div class="sleepmetric"><b>${Number.isFinite(Number(latest.minutes)) ? esc(fmtMins(latest.minutes)) : "-"}</b><span>${currentLang === "en" ? "Latest sleep" : "นอนล่าสุด"} · ${esc(sleepQualityText(latest.minutes))}</span></div>
+          <div class="sleepmetric"><b>${avg != null ? esc(fmtMins(avg)) : "-"}</b><span>${currentLang === "en" ? "7-log average" : "เฉลี่ย 7 logs"}</span></div>
+          <div class="sleepmetric"><b>${shortDays}</b><span>${currentLang === "en" ? "short-sleep days" : "วันที่นอนน้อยกว่า 6 ชม."}</span></div>
+          <div class="sleepmetric"><b>${wakeHeadaches}</b><span>${currentLang === "en" ? "wake-up headaches" : "ตื่นมาปวดหัว"}</span></div>
+        </div>
+        <div class="sleepdays">${dayRows}</div>
+      </div>`;
+    }
 
     function renderReport() {
       const attacks = events.filter(e => e.type === "attack_start");
@@ -2775,6 +2840,7 @@
       document.getElementById("todayDate").textContent = new Date().toLocaleDateString("th-TH", { weekday: "long", month: "long", day: "numeric" });
       renderMeds();
       renderReminders();
+      renderSleepInsight();
       renderCalendar();
       const todayEvents = sorted(events).filter(e => dateKey(e.at) === todayKey());
       renderTimeline("todayTimeline", todayEvents);
