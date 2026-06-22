@@ -351,6 +351,13 @@
     .sleepfill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--blue), var(--green)); }
     .sleepday.warn .sleepfill { background: linear-gradient(90deg, var(--yellow), var(--red)); }
     .sleepday strong { color: var(--text); white-space: nowrap; }
+    .medtable { display: grid; gap: 7px; margin-bottom: 12px; }
+    .medtablerow { display: grid; grid-template-columns: 62px minmax(0, 1fr) 82px; gap: 8px; align-items: start; border: 1px solid var(--line); background: rgba(255,255,255,.035); border-radius: 12px; padding: 9px; }
+    .medtablerow.head { background: transparent; color: var(--muted); font-size: 11px; font-weight: 950; text-transform: uppercase; border-style: dashed; }
+    .medcellmain { min-width: 0; }
+    .medcellmain strong { display: block; line-height: 1.2; overflow-wrap: anywhere; }
+    .medcellmain span, .medtablerow small { display: block; color: var(--muted); font-size: 11px; line-height: 1.3; margin-top: 3px; }
+    .medstatuspill { justify-self: end; border: 1px solid var(--line); background: var(--panel2); color: var(--text); border-radius: 999px; padding: 5px 7px; font-size: 11px; font-weight: 950; text-align: center; }
     @media (min-width: 760px) {
       .metricgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     }
@@ -1796,6 +1803,50 @@
     function plannedMedIds() {
       return new Set(MED_SCHEDULE.flatMap(g => g.meds.map(medId)));
     }
+    function medDoctor(id) {
+      if (id.includes("fluoxetine") || id.includes("methylphenidate")) return "อ.คมสันต์";
+      if (id.includes("nuvigil") || id.includes("circadin") || id.includes("depakine") || id.includes("propranolol") || id.includes("amitriptyline") || id.includes("pregabalin") || id.includes("flunarizine")) return "อ.โบว์";
+      return currentLang === "en" ? "confirm" : "ต้องยืนยัน";
+    }
+    function medPlanStatus(med) {
+      const text = `${medDose(med)} ${medLabel(med)}`;
+      if (text.includes("NEW")) return "NEW";
+      if (text.includes("MODIFIED")) return "MODIFIED";
+      if (text.includes("OLD")) return "OLD";
+      if (text.includes("CONTINUE")) return "CONTINUE";
+      return "CONTINUE";
+    }
+    function medStartText(med) {
+      if (med.startDate) return med.startDate;
+      if (med.endDate) return `${currentLang === "en" ? "until" : "ถึง"} ${med.endDate}`;
+      return currentLang === "en" ? "ongoing" : "ต่อเนื่อง";
+    }
+    function dailyMedicationTableHtml(schedule) {
+      const rows = schedule.flatMap(group => group.meds.map(med => {
+        const id = medId(med);
+        return `<div class="medtablerow">
+          <div><strong>${esc(group.due)}</strong><small>${esc(groupLabel(group.group))}</small></div>
+          <div class="medcellmain"><strong>${esc(medLabel(med))}</strong><span>${esc(medDose(med) || "-")} · ${currentLang === "en" ? "Start" : "เริ่ม/ช่วง"}: ${esc(medStartText(med))} · ${currentLang === "en" ? "Doctor" : "แพทย์"}: ${esc(medDoctor(id))}</span></div>
+          <div class="medstatuspill">${esc(medPlanStatus(med))}</div>
+        </div>`;
+      })).join("");
+      return `<div class="band"><div class="row between"><strong>${currentLang === "en" ? "Daily medication table" : "ตารางยารายวัน"}</strong><span class="mini">${todayKey()}</span></div>
+        <div class="medtable" style="margin-top:10px">
+          <div class="medtablerow head"><div>${currentLang === "en" ? "Time" : "เวลา"}</div><div>${currentLang === "en" ? "Medication" : "ยา"}</div><div>${currentLang === "en" ? "Status" : "สถานะ"}</div></div>
+          ${rows || `<div class="empty">${esc(t("noData"))}</div>`}
+        </div>
+      </div>`;
+    }
+    function reportMedicationRows(schedule) {
+      return schedule.flatMap(group => group.meds.map(med => {
+        const id = medId(med);
+        return `<div class="reportrow">
+          <strong>${esc(group.due)} · ${esc(groupLabel(group.group))}</strong>
+          <div class="reportcell">${esc(medLabel(med))}<br>${esc(medDose(med) || "-")}<br>Start/status: ${esc(medStartText(med))}</div>
+          <div class="reportbadge">${esc(medDoctor(id))}</div>
+        </div>`;
+      })).join("");
+    }
     function currentMedGroupName() {
       const h = new Date().getHours();
       if (h < 9) return "เช้า (ก่อนอาหารเช้า)";
@@ -1813,6 +1864,10 @@
       for (const group of MED_SCHEDULE) for (const med of group.meds) if (medDueToday(medId(med)) && medStatus(medId(med), group) === "missed") missed.push(medLabel(med));
       const nurtecLast = latestMedLog("nurtec75");
       const currentGroup = currentMedGroupName();
+      const orderedSchedule = [...MED_SCHEDULE].sort((a, b) => (a.group === currentGroup ? -1 : b.group === currentGroup ? 1 : 0));
+      const visibleSchedule = orderedSchedule
+        .map(group => ({ ...group, meds: group.meds.filter(med => medDueToday(medId(med))) }))
+        .filter(group => group.meds.length);
       document.getElementById("adherenceMini").innerHTML = `${takenCount}/${total}<br>${currentLang === "en" ? "meds" : "ยา"}`;
       document.getElementById("medSummary").innerHTML = `
         <div class="band ${missed.length ? "danger" : "ok"}">
@@ -1845,11 +1900,8 @@
           <div class="mini">MODIFIED: ${MED_HISTORY_NOTE.modified.map(esc).join(", ")}</div>
           <div class="mini">CONTINUE: ${MED_HISTORY_NOTE.continue.map(esc).join(", ")}</div>
           <div class="mini">DISCONTINUED: ${MED_HISTORY_NOTE.discontinued.map(esc).join(", ")}</div>
-        </div>`;
-      const orderedSchedule = [...MED_SCHEDULE].sort((a, b) => (a.group === currentGroup ? -1 : b.group === currentGroup ? 1 : 0));
-      const visibleSchedule = orderedSchedule
-        .map(group => ({ ...group, meds: group.meds.filter(med => medDueToday(medId(med))) }))
-        .filter(group => group.meds.length);
+        </div>
+        ${dailyMedicationTableHtml(visibleSchedule)}`;
       document.getElementById("medButtons").innerHTML = visibleSchedule.map(group => `
         <div class="medgroup ${group.group === currentGroup ? "current" : ""}">
           <div class="medtitle">${group.group === currentGroup ? (currentLang === "en" ? "Now · " : "ตอนนี้ · ") : ""}${esc(groupLabel(group.group))} <span class="mini">${group.due}</span></div>
@@ -2453,10 +2505,7 @@
     function renderSleepInsight() {
       const box = document.getElementById("sleepInsight");
       if (!box) return;
-      const sortedSleep = [...sleepLogs]
-        .map(s => ({ ...s, minutes: sleepMinutes(s) }))
-        .filter(s => s.date || s.at)
-        .sort((a, b) => new Date((b.date || dateKey(b.at)) + "T00:00:00") - new Date((a.date || dateKey(a.at)) + "T00:00:00"));
+      const sortedSleep = sleepEntriesSorted();
       if (!sortedSleep.length) {
         box.innerHTML = `<div class="band sleepinsight"><div class="row between"><strong>${currentLang === "en" ? "Sleep reading" : "อ่านการนอน"}</strong><span class="mini">${currentLang === "en" ? "No data" : "ยังไม่มีข้อมูล"}</span></div><div class="mini">${currentLang === "en" ? "Log morning sleep or import from Shortcut to see daily sleep interpretation here." : "บันทึกตอนเช้าหรือ Import จาก Shortcut แล้วแอปจะอ่านชั่วโมงนอนให้ตรงนี้"}</div></div>`;
         return;
@@ -2490,6 +2539,36 @@
         <div class="sleepdays">${dayRows}</div>
       </div>`;
     }
+    function sleepEntriesSorted() {
+      return [...sleepLogs]
+        .map(s => ({ ...s, minutes: sleepMinutes(s), key: s.date || dateKey(s.at) }))
+        .filter(s => s.key)
+        .sort((a, b) => new Date(b.key + "T00:00:00") - new Date(a.key + "T00:00:00"));
+    }
+    function sleepStats(entries = sleepEntriesSorted()) {
+      const withDuration = entries.filter(s => Number.isFinite(Number(s.minutes)));
+      const mins = withDuration.map(s => Number(s.minutes));
+      const avg = mins.length ? Math.round(mins.reduce((sum, v) => sum + v, 0) / mins.length) : null;
+      return {
+        entries,
+        withDuration,
+        avg,
+        avgText: avg != null ? fmtMins(avg) : "-",
+        shortDays: withDuration.filter(s => Number(s.minutes) < 360).length,
+        veryShortDays: withDuration.filter(s => Number(s.minutes) < 300).length,
+        wakeHeadaches: entries.filter(s => s.wakeHeadache && s.wakeHeadache !== "ไม่ปวด").length
+      };
+    }
+    function sleepReportRows(entries, limit = 10) {
+      const rows = entries.slice(0, limit).map(s => {
+        const m = Number(s.minutes);
+        const sleepText = Number.isFinite(m) ? fmtMins(m) : "-";
+        const windowText = [s.bedtime, s.wakeTime].filter(Boolean).join("→") || "-";
+        const wake = s.wakeHeadache ? choiceLabel(s.wakeHeadache, s.wakeHeadache) : "-";
+        return `<div class="reportrow"><strong>${esc(s.key)}</strong><div class="reportcell">${esc(windowText)} · ${esc(sleepQualityText(m))} · wake headache: ${esc(wake)}</div><div class="reportbadge">${esc(sleepText)}</div></div>`;
+      }).join("");
+      return rows || `<div class="empty">No sleep logs yet</div>`;
+    }
 
     function renderReport() {
       const attacks = events.filter(e => e.type === "attack_start");
@@ -2500,10 +2579,10 @@
       const completedDurations = improved.map(e => e.attackDurationMin).filter(v => Number.isFinite(Number(v)));
       const avgDur = completedDurations.length ? fmtMins(Math.round(completedDurations.reduce((s, v) => s + Number(v), 0) / completedDurations.length)) : "-";
       const nurtec = medLogs.filter(m => m.medId === "nurtec75").length;
-      const sleepDurations = sleepLogs.map(l => l.totalSleepMin).filter(v => Number.isFinite(Number(v)));
-      const avgSleep = sleepDurations.length ? fmtMins(Math.round(sleepDurations.reduce((s, v) => s + Number(v), 0) / sleepDurations.length)) : "-";
+      const sleepData = sleepStats();
+      const avgSleep = sleepData.avgText;
       const latestSleepHealth = [...sleepLogs].filter(s => s.hrv != null || s.restingHR != null).sort((a, b) => new Date(b.at) - new Date(a.at))[0];
-      const wakeHeadache = sleepLogs.filter(s => s.wakeHeadache && s.wakeHeadache !== "ไม่ปวด").length;
+      const wakeHeadache = sleepData.wakeHeadaches;
       const wakeAttacks = attacks.filter(a => a.wakeHeadache).length;
       const light = attacks.filter(a => a.flashingLights || a.aura).length;
       const prodromeCounts = {};
@@ -2516,6 +2595,9 @@
       const lastDate = events.length ? dateText([...events].sort((a, b) => new Date(b.at) - new Date(a.at))[0].at) : "-";
       const medCounts = countBy(medLogs, m => m.medName || medName(m.medId));
       const topMeds = Object.entries(medCounts).sort((a, b) => b[1] - a[1]).slice(0, 8);
+      const reportMedSchedule = MED_SCHEDULE
+        .map(group => ({ ...group, meds: group.meds.filter(med => medDueToday(medId(med))) }))
+        .filter(group => group.meds.length);
       const nurtecLast = medLogs.filter(m => m.medId === "nurtec75").sort((a, b) => new Date(b.at) - new Date(a.at))[0];
       const upcoming = upcomingCalendar().slice(0, 6);
       const visualSymptoms = attacks.filter(a => a.flashingLights || a.blurryVision || a.aura).length;
@@ -2558,7 +2640,7 @@
             ${metric(`${avgSeverity}/10`, "average severity")}
             ${metric(avgDur, "average duration")}
             ${metric(`${visualSymptoms}/${attacks.length || 0}`, "visual aura / disturbance")}
-            ${metric(`${wakeHeadache}/${sleepLogs.length || 0}`, "wake-up headache")}
+            ${metric(`${wakeHeadache}/${sleepData.entries.length || 0}`, "wake-up headache")}
             ${metric(worseEvents.length, "worsening logs")}
             ${metric(avgSleep, "average sleep")}
             ${metric(medLogs.length, "medication logs")}
@@ -2621,12 +2703,19 @@
         </div>
 
         <div class="reportsection">
+          <h2>Daily Medication Table</h2>
+          <div class="reporttable">${reportMedicationRows(reportMedSchedule)}</div>
+        </div>
+
+        <div class="reportsection">
           <h2>Sleep / Morning Headache</h2>
           <div class="reportlist">
-            <div class="reportitem">Average sleep duration: <strong>${esc(avgSleep)}</strong></div>
-            <div class="reportitem">Wake-up headache: <strong>${wakeHeadache}/${sleepLogs.length || 0}</strong> mornings logged</div>
+            <div class="reportitem">Average sleep duration: <strong>${esc(avgSleep)}</strong> from ${sleepData.withDuration.length}/${sleepData.entries.length} logs with duration.</div>
+            <div class="reportitem">Short sleep (&lt;6h): <strong>${sleepData.shortDays}</strong>; very short sleep (&lt;5h): <strong>${sleepData.veryShortDays}</strong>.</div>
+            <div class="reportitem">Wake-up headache: <strong>${wakeHeadache}/${sleepData.entries.length || 0}</strong> mornings logged</div>
             ${latestSleepHealth ? `<div class="reportitem">Latest imported HRV / resting HR: <strong>${esc(latestSleepHealth.hrv ?? "-")} ms / ${esc(latestSleepHealth.restingHR ?? "-")} BPM</strong></div>` : ""}
           </div>
+          <div class="reporttable" style="margin-top:8px">${sleepReportRows(sleepData.entries, 10)}</div>
         </div>
 
         <div class="reportsection">
@@ -2684,9 +2773,19 @@
       const topTriggers = Object.entries(triggerCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
       const visual = attacks.filter(a => a.aura || a.flashingLights || a.blurryVision).length;
       const nausea = attacks.filter(a => a.nausea).length;
-      const wakeHeadache = sleepLogs.filter(s => s.wakeHeadache && s.wakeHeadache !== "ไม่ปวด").length;
+      const sleepData = sleepStats();
+      const wakeHeadache = sleepData.wakeHeadaches;
       const nurtec = medLogs.filter(m => m.medId === "nurtec75").length;
+      const textMedSchedule = MED_SCHEDULE
+        .map(group => ({ ...group, meds: group.meds.filter(med => medDueToday(medId(med))) }))
+        .filter(group => group.meds.length)
+        .flatMap(group => group.meds.map(med => `- ${group.due} ${group.group}: ${medLabel(med)}; ${medDose(med) || "-"}; ${medPlanStatus(med)}; ${medDoctor(medId(med))}`))
+        .join("\n") || "- No active medication schedule";
       const recent = [...attacks].sort((a, b) => new Date(b.at) - new Date(a.at)).slice(0, 5);
+      const recentSleep = sleepData.entries.slice(0, 7).map(s => {
+        const m = Number(s.minutes);
+        return `- ${s.key}: ${Number.isFinite(m) ? fmtMins(m) : "-"}; ${s.bedtime || "-"}→${s.wakeTime || "-"}; wake headache ${s.wakeHeadache || "-"}`;
+      }).join("\n") || "- No sleep logs";
       return [
         "Neurology Migraine Summary",
         `${APP_VERSION_LABEL}`,
@@ -2698,7 +2797,12 @@
         `Average completed attack duration: ${avgDur}`,
         `Visual aura/visual disturbance: ${visual}/${attacks.length || 0}`,
         `Nausea: ${nausea}/${attacks.length || 0}`,
-        `Wake-up headache mornings: ${wakeHeadache}/${sleepLogs.length || 0}`,
+        `Average sleep: ${sleepData.avgText} (${sleepData.withDuration.length}/${sleepData.entries.length} logs with duration)`,
+        `Short sleep <6h: ${sleepData.shortDays}; very short sleep <5h: ${sleepData.veryShortDays}`,
+        `Wake-up headache mornings: ${wakeHeadache}/${sleepData.entries.length || 0}`,
+        "Recent sleep logs:",
+        recentSleep,
+        "",
         "",
         "Medication visit snapshot:",
         `- Visit: 22/06/2026, ${MED_VISIT_SNAPSHOT.doctor}, ${MED_VISIT_SNAPSHOT.clinic}`,
@@ -2708,6 +2812,9 @@
         `- Confirmed continue: ${MED_HISTORY_NOTE.continue.join("; ")}`,
         `- Review required: ${MED_REVIEW_REQUIRED.length ? MED_REVIEW_REQUIRED.map(m => m.name).join("; ") + ". Must confirm with physician." : "None currently listed. Pregabalin and Flunarizine remain on schedule."}`,
         `- Nurtec: DISCONTINUED after final dose 23/06/2026. Logged doses: ${nurtec}.`,
+        "",
+        "Daily medication table:",
+        textMedSchedule,
         "",
         "Top reported triggers:",
         topTriggers.length ? topTriggers.map(([name, count]) => `- ${name} / ${CLINICAL[name] || "possible migraine trigger"}: ${count}`).join("\n") : "- Not enough trigger data",
