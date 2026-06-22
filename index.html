@@ -980,28 +980,34 @@
 
     const MED_SCHEDULE = [
       { group: "เช้า (ก่อนอาหารเช้า)", due: "08:00", meds: [
-        { id: "nuvigil150_morning", name: "Nuvigil (Armodafinil) 150 mg x 1 เม็ด", dose: "NEW · อ.โบว์ · ก่อนอาหารเช้า" }
+        { id: "nuvigil150_morning", name: "Nuvigil (Armodafinil) 150 mg x 1 เม็ด", dose: "NEW · เริ่ม 23/06/2026 · ก่อนอาหารเช้า", startDate: "2026-06-23" }
       ]},
       { group: "เช้า (หลังอาหารเช้า)", due: "09:00", meds: [
         { id: "methylphenidate10x2_morning", name: "Methylphenidate 10 mg x 2 เม็ด", dose: "รวม 20 mg" },
         { id: "fluoxetine20x2_morning", name: "Fluoxetine 20 mg x 2 เม็ด", dose: "รวม 40 mg" },
-        { id: "propranolol10_morning", name: "Propranolol 10 mg x 1 เม็ด", dose: "TRANSITION · ใช้ถึงเช้า 23/06/2026", endDate: "2026-06-23" },
-        { id: "propranolol40_morning", name: "Propranolol 40 mg x 1 เม็ด", dose: "MODIFIED · เริ่มเช้า 24/06/2026", startDate: "2026-06-24" }
+        { id: "propranolol10_morning", name: "Propranolol 10 mg x 1 เม็ด", dose: "OLD · ใช้ถึง 22/06/2026", endDate: "2026-06-22" },
+        { id: "naproxen250_morning", name: "Naproxen 250 mg x 1 เม็ด", dose: "OLD · ใช้ถึง 22/06/2026", endDate: "2026-06-22" },
+        { id: "nurtec75", name: "Nurtec (Rimegepant) 75 mg x 1 เม็ด", dose: "วันสุดท้าย 23/06/2026 แล้วหยุด", endDate: "2026-06-23", everyOtherDay: true },
+        { id: "propranolol40_morning", name: "Propranolol 40 mg x 1 เม็ด", dose: "MODIFIED · เริ่ม 23/06/2026", startDate: "2026-06-23" }
       ]},
       { group: "กลางวัน (หลังอาหารกลางวัน)", due: "13:00", meds: [
         { id: "methylphenidate10x2_midday", name: "Methylphenidate 10 mg x 2 เม็ด", dose: "รวม 20 mg" }
       ]},
       { group: "เย็น (หลังอาหารเย็น)", due: "18:00", meds: [
         { id: "methylphenidate10x2_evening", name: "Methylphenidate 10 mg x 2 เม็ด", dose: "รวม 20 mg" },
-        { id: "propranolol10_evening", name: "Propranolol 10 mg x 1 เม็ด", dose: "TRANSITION · ใช้ถึงเย็น 22/06/2026", endDate: "2026-06-22" },
-        { id: "propranolol40_evening", name: "Propranolol 40 mg x 1 เม็ด", dose: "MODIFIED · เริ่มเย็น 23/06/2026", startDate: "2026-06-23" }
+        { id: "propranolol10_evening", name: "Propranolol 10 mg x 1 เม็ด", dose: "OLD · ใช้ถึง 22/06/2026", endDate: "2026-06-22" },
+        { id: "naproxen250_evening", name: "Naproxen 250 mg x 1 เม็ด", dose: "OLD · ใช้ถึง 22/06/2026", endDate: "2026-06-22" },
+        { id: "propranolol40_evening", name: "Propranolol 40 mg x 1 เม็ด", dose: "MODIFIED · เริ่ม 23/06/2026", startDate: "2026-06-23" }
       ]},
       { group: "20:00", due: "20:00", meds: [
-        { id: "circadin2_half_2000", name: "Circadin (Melatonin) 2 mg x 1/2 เม็ด", dose: "NEW · อ.โบว์" }
+        { id: "circadin2_half_2000", name: "Circadin (Melatonin) 2 mg x 1/2 เม็ด", dose: "NEW · เริ่ม 23/06/2026", startDate: "2026-06-23" }
       ]},
       { group: "ก่อนนอน", due: "22:00", meds: [
-        { id: "amitriptyline50_bedtime", name: "Amitriptyline 50 mg ก่อนนอน", dose: "MODIFIED · อ.โบว์ · เดิม 25 mg" },
-        { id: "depakine_chrono500_half_bedtime", name: "Depakine Chrono 500 mg x 1/2 เม็ด", dose: "NEW · อ.โบว์" }
+        { id: "pregabalin75_bedtime", name: "Pregabalin 75 mg x 1 เม็ด", dose: "CONTINUE · หมอไม่ได้สั่งยกเลิก" },
+        { id: "amitriptyline25_bedtime", name: "Amitriptyline 25 mg x 1 เม็ด", dose: "OLD · ใช้ถึง 22/06/2026", endDate: "2026-06-22" },
+        { id: "flunarizine5_bedtime", name: "Flunarizine 5 mg x 1 เม็ด", dose: "CONTINUE · หมอไม่ได้สั่งยกเลิก" },
+        { id: "amitriptyline50_bedtime", name: "Amitriptyline 50 mg ก่อนนอน", dose: "MODIFIED · เริ่ม 23/06/2026", startDate: "2026-06-23" },
+        { id: "depakine_chrono500_half_bedtime", name: "Depakine Chrono 500 mg x 1/2 เม็ด", dose: "NEW · เริ่ม 23/06/2026", startDate: "2026-06-23" }
       ]}
     ];
 
@@ -1011,15 +1017,12 @@
       clinic: "Sleep Medicine",
       nextVisit: "2026-07-13",
       notes: [
-        "Visit updated medication plan on 22/06/2026.",
+        "Visit updated medication plan on 22/06/2026; old regimen continues through 22/06/2026, new regimen starts 23/06/2026.",
         "Next appointment changed to 13/07/2026.",
         "Medication supply issue before appointment was reported as resolved."
       ]
     };
-    const MED_REVIEW_REQUIRED = [
-      { name: "Pregabalin 75 mg", status: "UNKNOWN", note: "ไม่พบคำสั่งหยุดชัดเจน ต้องยืนยันกับแพทย์" },
-      { name: "Flunarizine 5 mg", status: "UNKNOWN", note: "ไม่พบคำสั่งหยุดชัดเจน ต้องยืนยันกับแพทย์" }
-    ];
+    const MED_REVIEW_REQUIRED = [];
     const MED_DISCONTINUED = [
       { name: "Nurtec (Rimegepant) 75 mg", status: "DISCONTINUED", stopDate: "2026-06-23", note: "dose สุดท้าย 23/06/2026 แล้วหยุด ไม่ต่อยา" }
     ];
@@ -1027,10 +1030,10 @@
       date: "2026-06-22",
       doctor: "อ.โบว์",
       clinic: "Sleep Medicine",
-      new: ["Nuvigil (Armodafinil) 150 mg", "Circadin (Melatonin) 2 mg 1/2 เม็ด 20:00", "Depakine Chrono 500 mg 1/2 เม็ด ก่อนนอน"],
-      modified: ["Propranolol transition: 10 mg ถึงเช้า 23/06/2026; เริ่ม 40 mg เย็น 23/06/2026", "Amitriptyline 25 mg → 50 mg ก่อนนอน"],
-      continue: ["Fluoxetine 40 mg · อ.คมสันต์", "Methylphenidate 20 mg · อ.คมสันต์"],
-      review: ["Pregabalin 75 mg", "Flunarizine 5 mg"],
+      new: ["Nuvigil (Armodafinil) 150 mg เริ่ม 23/06/2026", "Circadin (Melatonin) 2 mg 1/2 เม็ด 20:00 เริ่ม 23/06/2026", "Depakine Chrono 500 mg 1/2 เม็ด ก่อนนอน เริ่ม 23/06/2026"],
+      modified: ["Propranolol: 10 mg ใช้ถึง 22/06/2026; 40 mg เริ่ม 23/06/2026", "Amitriptyline 25 mg ใช้ถึง 22/06/2026 → 50 mg เริ่ม 23/06/2026"],
+      continue: ["Fluoxetine 40 mg · อ.คมสันต์", "Methylphenidate 20 mg · อ.คมสันต์", "Pregabalin 75 mg · CONTINUE", "Flunarizine 5 mg · CONTINUE"],
+      review: [],
       discontinued: ["Nurtec · dose สุดท้าย 23/06/2026 แล้วหยุด"]
     };
 
@@ -1810,12 +1813,15 @@
           <div class="mini">${currentLang === "en" ? "Next appointment" : "นัดครั้งถัดไป"}: ${esc(MED_VISIT_SNAPSHOT.nextVisit)}</div>
           <div class="mini">${currentLang === "en" ? "New" : "ยาใหม่"}: ${MED_HISTORY_NOTE.new.map(esc).join(", ")}</div>
           <div class="mini">${currentLang === "en" ? "Modified" : "ปรับยา"}: ${MED_HISTORY_NOTE.modified.map(esc).join(", ")}</div>
-          <div class="mini"><strong>Propranolol transition:</strong> 10 mg ใช้ถึงเช้า 23/06/2026 · เริ่ม 40 mg เย็น 23/06/2026</div>
+          <div class="mini"><strong>${currentLang === "en" ? "Transition" : "ช่วงเปลี่ยนยา"}:</strong> 22/06/2026 ใช้ตารางเก่าทั้งหมด · เริ่มตารางใหม่ 23/06/2026</div>
         </div>
-        <div class="band warn">
+        ${MED_REVIEW_REQUIRED.length ? `<div class="band warn">
           <div class="row between"><strong>${currentLang === "en" ? "Review required" : "ต้องยืนยันกับแพทย์"}</strong><span>UNKNOWN</span></div>
           ${MED_REVIEW_REQUIRED.map(m => `<div class="mini"><strong>${esc(m.name)}</strong>: ${esc(m.note)}</div>`).join("")}
-        </div>
+        </div>` : `<div class="band ok">
+          <div class="row between"><strong>${currentLang === "en" ? "Continued meds confirmed" : "ยาที่กินต่อ"}</strong><span>CONTINUE</span></div>
+          <div class="mini">Pregabalin 75 mg และ Flunarizine 5 mg ยังอยู่ในตารางยา เพราะหมอไม่ได้สั่งยกเลิก</div>
+        </div>`}
         <div class="band">
           <div class="row between"><strong>Nurtec</strong><span>DISCONTINUED</span></div>
           <div class="mini">${currentLang === "en" ? "Last logged" : "บันทึกล่าสุด"}: ${nurtecLast ? `${dateText(nurtecLast.at)} ${timeText(nurtecLast.at)}` : "-"}</div>
@@ -2542,7 +2548,7 @@
             <div class="reportitem"><strong>New medications:</strong> ${MED_HISTORY_NOTE.new.map(esc).join("; ")}</div>
             <div class="reportitem"><strong>Modified medications:</strong> ${MED_HISTORY_NOTE.modified.map(esc).join("; ")}</div>
             <div class="reportitem"><strong>Confirmed continue:</strong> ${MED_HISTORY_NOTE.continue.map(esc).join("; ")}</div>
-            <div class="reportitem"><strong>Review required:</strong> ${MED_REVIEW_REQUIRED.map(m => `${esc(m.name)} (${esc(m.status)})`).join("; ")}. Must confirm with physician.</div>
+            <div class="reportitem"><strong>Review required:</strong> ${MED_REVIEW_REQUIRED.length ? MED_REVIEW_REQUIRED.map(m => `${esc(m.name)} (${esc(m.status)})`).join("; ") + ". Must confirm with physician." : "None currently listed. Pregabalin and Flunarizine remain on schedule because no discontinuation order was given."}</div>
             <div class="reportitem"><strong>Nurtec:</strong> DISCONTINUED after final dose 23/06/2026. Logged dose count: ${nurtec}. Last logged: ${nurtecLast ? `${esc(dateText(nurtecLast.at))} ${esc(timeText(nurtecLast.at))}` : "-"}.</div>
           </div>
           ${topMeds.length ? `<div class="reporttable" style="margin-top:8px">${topMeds.map(([name, count]) => `
@@ -2635,7 +2641,7 @@
         `- New: ${MED_HISTORY_NOTE.new.join("; ")}`,
         `- Modified: ${MED_HISTORY_NOTE.modified.join("; ")}`,
         `- Confirmed continue: ${MED_HISTORY_NOTE.continue.join("; ")}`,
-        `- Review required: ${MED_REVIEW_REQUIRED.map(m => m.name).join("; ")}. Must confirm with physician.`,
+        `- Review required: ${MED_REVIEW_REQUIRED.length ? MED_REVIEW_REQUIRED.map(m => m.name).join("; ") + ". Must confirm with physician." : "None currently listed. Pregabalin and Flunarizine remain on schedule."}`,
         `- Nurtec: DISCONTINUED after final dose 23/06/2026. Logged doses: ${nurtec}.`,
         "",
         "Top reported triggers:",
